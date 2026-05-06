@@ -1094,6 +1094,11 @@ app.use((err, req, res, next) => {
 /* =========================
    SERVER START
 ========================= */
+{
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
+  ]
+}
 
 const PORT = process.env.PORT || 5000;
 
