@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <title>Neo-Bazaar — Next-Gen Shopping</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #07060f;
+      --bg-secondary: #0f0d1a;
+      --bg-card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text-primary: #f0eeff;
+      --text-secondary: #9b93c4;
+      --text-muted: #5c5480;
+      --glow-purple: rgba(139,92,246,0.35);
+      --nav-bg: rgba(7,6,15,0.85);
+    }
+    [data-theme="light"] {
+      --bg-primary: #f8f7ff;
+      --bg-secondary: #ffffff;
+      --bg-card: rgba(0,0,0,0.03);
+      --border: rgba(0,0,0,0.08);
+      --text-primary: #121026;
+      --text-secondary: #5b5480;
+      --text-muted: #918ba8;
+      --nav-bg: rgba(248,247,255,0.9);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: background 0.4s, color 0.4s;
+    }
+    h1, h2, h3, .heading { font-family: 'Syne', sans-serif; }
+
+    /* ── MESH BG ── */
+    .mesh-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(251, 146, 60, 0.08) 0%, transparent 50%);
+    }
+
+    /* ── GLASS EFFECT ── */
+    .glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+
+    /* ── NAVIGATION ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #fb923c 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #fb923c 100%);
+      color: white;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    }
+
+    /* ── SLIDING BANNERS (MOVING) ── */
+    .ticker-wrap {
+      overflow: hidden;
+      white-space: nowrap;
+      background: rgba(124, 58, 237, 0.05);
+      /* Fix here */
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .ticker-track {
+      display: inline-flex;
+      animation: slideTicker 30s linear infinite;
+    }
+    @keyframes slideTicker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .animate-scroll {
+      animation: scroll 15s linear infinite;
+    }
+  
+
+    /* ── STATIC PRODUCT CARDS ── */
+    .product-card {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .product-card:hover {
+      transform: translateY(-10px);
+    }
+
+    /* ── FLASH SALE TRACK (JS conveyor) ── */
+    .deals-track {
+      position: relative;
+      height: 320px;
+      overflow: hidden;
+    }
+    .deals-track .deal-card {
+      position: absolute;
+      top: 0;
+      width: 260px;
+    }
+    .deals-container:hover .deal-card { animation-play-state: paused !important; }
+
+    @keyframes heroSwap {
+      0%, 30% { opacity: 1; transform: translateY(0); }
+      33%, 100% { opacity: 0; transform: translateY(20px); }
+    }
+
+    .animate-hero {
+      animation: heroSwap 12s infinite;
+    }
+
+    .delay-4 {
+      animation-delay: 4s;
+    }
+
+    .delay-8 {
+      animation-delay: 8s;
+    }
+
+    .animate-scroll {
+      animation: scroll 25s linear infinite;
+    }
+
+    /* ── DROPDOWN MENU ── */
+    .dropdown-menu {
+      background: rgba(10, 8, 20, 0.97);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
+    }
+    [data-theme="light"] .dropdown-menu {
+      background: rgba(255,255,255,0.97);
+      border: 1px solid rgba(0,0,0,0.1);
+      color: var(--text-primary);
+    }
+    [data-theme="light"] .dropdown-menu a {
+      color: var(--text-primary);
+    }
+
+    /* ── LIGHT MODE MODAL ── */
+    /* ── MOBILE NAV DRAWER ── */
+    #mobileDrawer {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 75%; max-width: 300px;
+      z-index: 300;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      display: flex; flex-direction: column;
+      padding: 1.5rem 1.25rem;
+      gap: 0.5rem;
+      overflow-y: auto;
+    }
+    #mobileDrawer.open { transform: translateX(0); }
+    #drawerOverlay {
+      position: fixed; inset: 0; z-index: 299;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(2px);
+      display: none;
+    }
+    #drawerOverlay.open { display: block; }
+
+    /* ── MOBILE SEARCH BAR (below nav, mobile only) ── */
+    #mobileSearchBar {
+      display: none;
+    }
+    @media (max-width: 639px) {
+      #mobileSearchBar {
+        display: flex;
+        position: sticky;
+        top: 56px;
+        z-index: 90;
+        padding: 8px 12px;
+        gap: 8px;
+        background: var(--nav-bg);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--border);
+      }
+      /* Adjust category bar top offset to sit below both nav + search bar */
+      #homeCatBar {
+        top: 104px !important;
+      }
+      /* shrink nav height on mobile */
+      nav { height: 56px !important; }
+    }
+
+    /* ── MOBILE BOTTOM NAV ── */
+    #mobileBottomNav {
+      display: none;
+    }
+    @media (max-width: 639px) {
+      #mobileBottomNav {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 200;
+        background: var(--nav-bg);
+        backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border);
+        height: 60px;
+        align-items: center;
+        justify-content: space-around;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      /* Add bottom padding to body so content isn't hidden behind bottom nav */
+      body { padding-bottom: 60px; }
+    }
+    .mob-nav-btn {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 2px;
+      font-size: 10px; color: var(--text-secondary);
+      cursor: pointer; flex: 1; padding: 6px 0;
+      background: none; border: none;
+      transition: color 0.2s;
+    }
+    .mob-nav-btn:active { color: #a78bfa; }
+    .mob-nav-btn span.icon { font-size: 20px; line-height: 1; }
+
+    [data-theme="light"] #authModal .glass,
+    [data-theme="light"] #complaintModal .glass {
+      background: rgba(255,255,255,0.95);
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    [data-theme="light"] #authModal input,
+    [data-theme="light"] #complaintModal input,
+    [data-theme="light"] #complaintModal textarea {
+      background: rgba(0,0,0,0.06);
+      color: var(--text-primary);
+    }
+  </style>
+  <script>
+    // Inherit persisted theme before render to prevent flash
+    (function() {
+      const t = localStorage.getItem('nb-theme') || 'dark';
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
+</head>
+
+<body>
+  <div class="mesh-bg"></div>
+
+  <!-- MOBILE DRAWER OVERLAY -->
+  <div id="drawerOverlay" onclick="closeDrawer()"></div>
+
+  <!-- MOBILE SIDE DRAWER -->
+  <div id="mobileDrawer">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <img src="assets/img/NeoB_img.jpeg" class="w-8 h-8 object-contain rounded">
+        <span class="heading text-lg font-extrabold tracking-tighter grad-text">Neo-Bazaar</span>
+      </div>
+      <button onclick="closeDrawer()" class="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+    </div>
+    <hr class="border-white/10 mb-3">
+    <!-- Auth section inside drawer -->
+    <div id="drawerAuthSection" class="mb-3">
+      <button onclick="closeDrawer(); openAuth('login')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-bold" id="drawerOpenAuthBtn">Account / Login</button>
+      <div id="drawerUserMenu" class="hidden space-y-2">
+        <p class="text-xs text-violet-300 truncate px-1" id="drawerLoggedEmail"></p>
+        <a href="pages/orders.html" class="block w-full glass text-center py-2 rounded-xl text-sm hover:bg-white/10">📦 Orders</a>
+        <button onclick="logout()" class="block w-full text-center py-2 text-sm text-red-400 hover:bg-white/5 rounded-xl">Logout</button>
+      </div>
+    </div>
+    <hr class="border-white/10 mb-3">
+    <!-- Nav links -->
+    <a href="#" class="block py-2.5 px-2 text-sm font-medium hover:text-orange-400 transition rounded-lg hover:bg-white/5">🏠 Home</a>
+    <a href="pages/search.html?mode=explore" class="block py-2.5 px-2 text-sm font-medium hover:text-orange-400 transition rounded-lg hover:bg-white/5">🗂️ Collections</a>
+    <a href="pages/search.html?mode=flash" class="block py-2.5 px-2 text-sm font-medium hover:text-orange-400 transition rounded-lg hover:bg-white/5">⚡ Flash Deals</a>
+    <hr class="border-white/10 my-3">
+    <p class="text-xs text-gray-500 px-2 mb-2 uppercase tracking-widest">Categories</p>
+    <a onclick="closeDrawer(); goCat('Men')"     class="block py-2 px-2 text-sm hover:text-orange-400 cursor-pointer rounded-lg hover:bg-white/5">👕 Men</a>
+    <a onclick="closeDrawer(); goCat('Women')"   class="block py-2 px-2 text-sm hover:text-orange-400 cursor-pointer rounded-lg hover:bg-white/5">👗 Women</a>
+    <a onclick="closeDrawer(); goCat('Electronics')" class="block py-2 px-2 text-sm hover:text-orange-400 cursor-pointer rounded-lg hover:bg-white/5">📱 Electronics</a>
+    <a onclick="closeDrawer(); goCat('Gaming')"  class="block py-2 px-2 text-sm hover:text-orange-400 cursor-pointer rounded-lg hover:bg-white/5">🎮 Gaming</a>
+    <a onclick="closeDrawer(); goCat('Beauty')"  class="block py-2 px-2 text-sm hover:text-orange-400 cursor-pointer rounded-lg hover:bg-white/5">💄 Beauty</a>
+    <a onclick="closeDrawer(); goCat('Sneakers')" class="block py-2 px-2 text-sm hover:text-orange-400 cursor-pointer rounded-lg hover:bg-white/5">👟 Sneakers</a>
+    <hr class="border-white/10 my-3">
+    <button onclick="toggleTheme()" class="flex items-center gap-2 py-2 px-2 text-sm w-full hover:text-orange-400 transition rounded-lg hover:bg-white/5">🌗 Toggle Theme</button>
+  </div>
+
+  <!-- NAVIGATION -->
+  <nav class="h-16 flex items-center px-4 sm:px-6 md:px-12">
+    <!-- Hamburger (mobile only) -->
+    <button onclick="openDrawer()" class="sm:hidden mr-3 glass px-2.5 py-2 rounded-xl text-lg leading-none" aria-label="Menu">☰</button>
+
+    <div class="flex items-center gap-2">
+      <img src="assets/img/NeoB_img.jpeg" class="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded">
+      <span class="heading text-lg sm:text-xl font-extrabold tracking-tighter grad-text">Neo-Bazaar</span>
+    </div>
+    <div class="hidden md:flex ml-10 gap-6 text-sm font-medium text-gray-400">
+      <a href="#" class="hover:text-white transition">Home</a>
+      <a href="#" class="hover:text-white transition">Collections</a>
+      <a href="#" class="hover:text-white transition">New Drops</a>
+    </div>
+    <div class="ml-auto flex items-center gap-3">
+      <!-- Desktop Search -->
+      <div class="relative hidden sm:flex items-center">
+        <input type="text" id="navSearch" placeholder="Search the bazaar..." class="glass rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none w-52 md:w-64" onkeydown="if(event.key==='Enter') goSearch()">
+        <span class="absolute left-4 top-1.5">🔍</span>
+        <button onclick="goSearch()" class="btn-primary ml-2 px-4 py-1.5 rounded-full text-sm">Search</button>
+      </div>
+      <!-- DARK MODE (desktop only) -->
+      <button onclick="toggleTheme()" class="hidden sm:block glass px-3 py-1 rounded-full text-sm">🌗</button>
+
+      <!-- USER DROPDOWN / AUTH (desktop only) -->
+      <div class="relative group hidden sm:block" id="accountMenu">
+        <button id="openAuthBtn" onclick="openAuth('login')" class="btn-primary px-4 py-1.5 rounded-full text-sm">Account</button>
+        <div id="userMenu" class="hidden group">
+          <button class="btn-primary px-4 py-1.5 rounded-full text-sm" id="userEmailBtn">Hi 👋</button>
+          <div class="absolute right-0 top-full pt-2 w-44 z-50">
+            <div class="rounded-xl shadow-xl dropdown-menu overflow-hidden hidden group-hover:block">
+              <p class="px-4 py-2 text-xs text-violet-300 truncate" id="loggedEmail"></p>
+              <hr class="border-white/10">
+              <a href="pages/orders.html" class="block px-4 py-2 hover:bg-white/10 cursor-pointer text-[var(--text-primary)]">Orders</a>
+              <a class="block px-4 py-2 hover:bg-white/10 text-red-400 cursor-pointer" onclick="logout()">Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CART (desktop only — mobile uses bottom nav) -->
+      <div class="relative group cursor-pointer hidden sm:block" onclick="goToCart()">
+        <span class="text-xl">🛒</span>
+        <span id="cartCount" class="absolute -top-2 -right-2 bg-orange-500 text-[10px] px-1.5 rounded-full">0</span>
+        <div class="absolute right-0 mt-2 w-72 dropdown-menu rounded-xl p-4 hidden group-hover:block z-50">
+          <p class="text-sm font-bold mb-3">Cart</p>
+          <div id="cartItems"><p class="text-xs text-gray-400">Cart is empty</p></div>
+          <div id="cartTotal" class="hidden mt-3 border-t border-white/10 pt-3 flex justify-between text-sm font-bold">
+            <span>Total</span><span id="totalPrice" class="text-orange-400"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile cart count badge (visible on mobile, tapping goes to cart) -->
+      <div class="relative cursor-pointer sm:hidden" onclick="goToCart()">
+        <span class="text-xl">🛒</span>
+        <span id="cartCountMobile" class="absolute -top-2 -right-2 bg-orange-500 text-[10px] px-1.5 rounded-full">0</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE SEARCH BAR (below nav, mobile only) -->
+  <div id="mobileSearchBar">
+    <input type="text" id="mobileSearchInput" placeholder="🔍  Search the bazaar..." class="glass rounded-full py-2 px-4 text-sm focus:outline-none flex-1" onkeydown="if(event.key==='Enter') goMobileSearch()">
+    <button onclick="goMobileSearch()" class="btn-primary px-4 py-2 rounded-full text-sm shrink-0">Search</button>
+  </div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <div id="mobileBottomNav">
+    <button class="mob-nav-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+      <span class="icon">🏠</span><span>Home</span>
+    </button>
+    <button class="mob-nav-btn" onclick="window.location.href='pages/search.html?mode=explore'">
+      <span class="icon">🔥</span><span>Explore</span>
+    </button>
+    <button class="mob-nav-btn" onclick="openDrawer()">
+      <span class="icon">☰</span><span>Menu</span>
+    </button>
+    <button class="mob-nav-btn" onclick="mobileOpenAuth()">
+      <span class="icon">👤</span><span id="mobAuthLabel">Account</span>
+    </button>
+    <button class="mob-nav-btn" onclick="goToCart()" style="position:relative;">
+      <span class="icon">🛒</span>
+      <span id="cartCountMob2" class="absolute top-1 right-3 bg-orange-500 text-[9px] px-1 rounded-full leading-tight">0</span>
+      <span>Cart</span>
+    </button>
+  </div>
+
+  <!-- CATEGORY BAR — wired to search page -->
+  <div class="sticky top-16 z-50 bg-black/10 backdrop-blur border-b border-white/10 px-6 py-3 flex gap-6 overflow-x-auto text-sm" id="homeCatBar">
+    <div class="flex items-center gap-2 whitespace-nowrap cursor-pointer hover:text-orange-400" onclick="window.location.href='pages/search.html?mode=explore'">🔥 For You</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Men')">👕 Men</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Women')">👗 Women</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Electronics')">📱 Electronics</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Home')">🏠 Home</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Gaming')">🎮 Gaming</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Beauty')">💄 Beauty</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Sneakers')">👟 Sneakers</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Accessories')">👜 Accessories</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Books')">📚 Books</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Gadgets')">⌚ Gadgets</div>
+    <div class="flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer hover:text-orange-400" onclick="goCat('Tech')">🖥️ Tech</div>
+  </div>
+
+  <!-- HERO -->
+  <section class="pt-20 pb-16 px-6 md:px-12 max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+    <div>
+      <span class="text-orange-400 font-bold text-xs tracking-widest uppercase mb-4 block">Welcome to the Future</span>
+      <h1 class="heading text-5xl md:text-6xl font-black leading-tight mb-6">
+        Neo-<br><span class="grad-text">Bazaar</span>
+      </h1>
+      <p class="text-gray-400 text-lg mb-8 max-w-md">Your hyper-curated marketplace for digital-age essentials and exclusive drops.</p>
+      <div class="flex gap-4">
+        <button onclick="window.location.href='pages/search.html?mode=explore'" class="btn-primary px-8 py-4 rounded-xl font-bold">Start Exploring</button>
+        <button onclick="window.location.href='pages/search.html?mode=flash'" class="glass px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition">Flash Deals</button>
+      </div>
+    </div>
+    <div class="relative group flex justify-center items-center">
+      <div class="absolute inset-0 bg-gradient-to-r from-violet-600 to-orange-500 rounded-2xl blur-xl opacity-25 group-hover:opacity-40 transition"></div>
+      <div class="glass relative rounded-2xl p-6 w-[260px] flex flex-col items-center overflow-hidden" id="featuredHeroCard">
+        <!-- Populated by loadFeaturedHero() -->
+        <div class="flex flex-col items-center text-center">
+          <div class="text-5xl mb-3">🛍️</div>
+          <div class="text-xs text-orange-400 font-bold mb-1">FEATURED</div>
+          <div class="heading text-lg font-bold text-gray-400">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOVING TICKER (50%+ discount products, fetched from server) -->
+  <div class="overflow-hidden py-6 bg-white/5">
+    <div class="flex gap-10 animate-scroll w-max" id="dealsTickerTrack">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- STATIC PRODUCT GRID (Corrected: No Movement) -->
+  <section class="max-w-7xl mx-auto px-6 md:px-12 mb-20 reveal">
+    <div class="flex justify-between items-end mb-10">
+      <h2 class="heading text-4xl font-bold">Curated <span class="text-violet-400">Essentials</span></h2>
+      <button class="text-orange-400 text-sm font-bold border-b border-orange-400">View All Products</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="productGrid">
+      <!-- Products will be injected here by JS -->
+    </div>
+  </section>
+
+  <!-- MOVING DEALS SECTION (products with >50% discount, fetched from server) -->
+  <section class="mb-20 overflow-hidden deals-container">
+    <div class="max-w-7xl mx-auto px-6 md:px-12 mb-8">
+      <h2 class="heading text-4xl font-bold">Hot <span class="grad-text">Flash Deals</span></h2>
+      <p class="text-sm text-gray-500 mt-1">Top discounted products, sorted by biggest savings</p>
+    </div>
+    <div class="deals-track" id="dealsTrack">
+      <!-- Deal cards injected by loadFlashDeals() -->
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+<footer class="glass border-t border-white/5 pt-20 pb-10 px-6">
+  <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 mb-10">
+
+    <!-- LOGO -->
+<div class="col-span-1">
+  <div class="flex items-center gap-2 mb-6">
+    <img src="assets/img/NeoB_img.jpeg" alt="Neo-Bazaar Logo" class="w-6 h-6 rounded object-contain">
+    <span class="heading text-lg font-bold grad-text">Neo-Bazaar</span>
+  </div>
+  <p class="text-gray-500 text-sm">
+    Revolutionizing the way you browse and buy. Only at Neo-Bazaar.
+  </p>
+</div>
+
+
+    <!-- SHOP -->
+    <div>
+      <h4 class="font-bold mb-4">Shop</h4>
+      <ul class="text-gray-500 text-sm space-y-2">
+
+        <li>
+          <a href="pages/search.html?cat=Electronics&mode=search" class="hover:text-orange-400">
+            Electronics
+          </a>
+        </li>
+
+        <li>
+          <a href="pages/search.html?cat=Fashion&mode=search" class="hover:text-orange-400">
+            Fashion
+          </a>
+        </li>
+
+        <li>
+          <a href="pages/search.html?cat=Home&mode=search" class="hover:text-orange-400">
+            Home Decor
+          </a>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- SUPPORT -->
+    <div>
+      <h4 class="font-bold mb-4">Support</h4>
+      <ul class="text-gray-500 text-sm space-y-2">
+
+        <!-- privacy and policy page -->
+         <li><a href="/pages/legal.html" class="hover:text-orange-400">
+            Privacy and Policy
+          </a></li>
+
+        <!-- Returns -->
+        <li>
+          <a href="assets/img/return.jpeg" class="hover:text-orange-400">
+            Returns
+          </a>
+        </li>
+
+        <!-- Complain -->
+        <li>
+          <a href="/pages/complaints.html" class="hover:text-orange-400" target="_blank">
+            Complain
+          </a>
+        </li>
+
+          <!-- Credits page -->
+        <li>
+          <a href="pages/credits.html" class="hover:text-orange-400">
+            Credits
+          </a>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- NEWSLETTER -->
+    <div>
+      <h4 class="font-bold mb-4">Newsletter</h4>
+      <div class="flex gap-2">
+        <input type="text" class="glass rounded-lg px-4 py-2 text-xs w-full" placeholder="email@example.com">
+        <button class="btn-primary px-4 py-2 rounded-lg text-xs">Join</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="max-w-7xl mx-auto text-center text-gray-600 text-xs border-t border-white/5 pt-10">
+    &copy; 2026 Neo-Bazaar. All rights reserved.
+  </div>
+</footer>
+
+  <!-- ═══════════════════════════════════════════
+       AUTH MODAL (Login / Register)
+  ═══════════════════════════════════════════ -->
+  <div id="authModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="glass rounded-2xl p-6 w-full max-w-sm mx-4 relative max-h-[90vh] overflow-y-auto">
+      <!-- Tabs -->
+      <div class="flex mb-6 gap-3 pr-8">
+        <button id="tabLogin" onclick="switchTab('login')"
+          class="flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition btn-primary">
+          LOGIN
+        </button>
+
+        <button id="tabRegister" onclick="switchTab('register')"
+          class="flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition glass hover:bg-white/10">
+          REGISTER
+        </button>
+      </div>
+      <button onclick="closeAuth()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-lg leading-none">✕</button>
+
+      <div class="space-y-4">
+        <input id="authUsername" type="text" placeholder="Username"
+          class="w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 hidden bg-white/10 text-[var(--text-primary)] placeholder-[var(--text-muted)]">
+        <input id="authEmail" type="email" placeholder="Email address"
+          class="w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white/10 text-[var(--text-primary)] placeholder-[var(--text-muted)]">
+        <input id="authPassword" type="password" placeholder="Password"
+          class="w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white/10 text-[var(--text-primary)] placeholder-[var(--text-muted)]">
+        <p id="authMsg" class="text-xs text-center hidden"></p>
+        <button onclick="submitAuth()"
+          class="w-full btn-primary py-3 rounded-xl font-bold text-sm" id="authSubmitBtn">Login</button>
+      </div>
+
+      <p class="text-center text-xs text-gray-500 mt-4">
+        <span id="switchHint">Don't have an account?</span>
+        <span class="text-violet-400 cursor-pointer ml-1" id="switchLink" onclick="switchTab('register')">Register</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       COMPLAINT MODAL
+  ═══════════════════════════════════════════ -->
+  <div id="complaintModal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="glass rounded-2xl p-8 w-full max-w-sm mx-4 relative">
+      <button onclick="closeComplaint()" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">✕</button>
+      <h2 class="heading text-2xl font-bold mb-6">Lodge a Complaint</h2>
+      <div class="space-y-4">
+        <input id="cEmail" type="email" placeholder="Your email"
+          class="w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none">
+        <textarea id="cMessage" rows="4" placeholder="Describe your issue..."
+          class="w-full glass rounded-xl px-4 py-3 text-sm focus:outline-none resize-none"></textarea>
+        <p id="cMsg" class="text-xs text-center hidden"></p>
+        <button onclick="submitComplaint()" class="w-full btn-primary py-3 rounded-xl font-bold text-sm">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = ''; // same origin — server.js serves index.html
+
+    /* ══════════════════════════════════════
+       MOBILE DRAWER
+    ══════════════════════════════════════ */
+    function openDrawer() {
+      document.getElementById('mobileDrawer').classList.add('open');
+      document.getElementById('drawerOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+      document.getElementById('mobileDrawer').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function goMobileSearch() {
+      const q = document.getElementById('mobileSearchInput').value.trim();
+      if (q) {
+        window.location.href = `pages/search.html?q=${encodeURIComponent(q)}&mode=search`;
+      } else {
+        window.location.href = 'pages/search.html?mode=search';
+      }
+    }
+    function mobileOpenAuth() {
+      const saved = localStorage.getItem('user');
+      if (saved) { openDrawer(); } else { openAuth('login'); }
+    }
+
+    /* ══════════════════════════════════════
+       CART STATE
+    ══════════════════════════════════════ */
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    function addToCart(id) {
+
+    // ALWAYS get fresh cart
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    const product = (window.products || []).find(p => p._id === id)
+      || (window.featuredProducts || []).find(p => p._id === id);
+
+    if (!product) return;
+
+    const existing = cart.find(i => i._id === id);
+
+    if (existing) {
+      existing.quantity = (existing.quantity || 1) + 1;
+    } else {
+      cart.push({
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1
+      });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+
+    renderCart();
+  }
+
+  // ADD THESE
+  
+  
+
+    function renderCart() {
+      cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+
+      const countEl  = document.getElementById('cartCount');
+      const itemsEl  = document.getElementById('cartItems');
+      const totalEl  = document.getElementById('cartTotal');
+      const totalPEl = document.getElementById('totalPrice');
+      const totalQty = cart.reduce((s, i) => s + (i.quantity || i.qty || 1), 0);
+      countEl.textContent = totalQty;
+      // sync mobile badges
+      const mob1 = document.getElementById('cartCountMobile');
+      const mob2 = document.getElementById('cartCountMob2');
+      if (mob1) mob1.textContent = totalQty;
+      if (mob2) mob2.textContent = totalQty;
+      if (cart.length === 0) {
+        itemsEl.innerHTML = '<p class="text-xs text-gray-400">Cart is empty</p>';
+        totalEl.classList.add('hidden'); return;
+      }
+      itemsEl.innerHTML = cart.map(i => `
+        <div class="flex justify-between text-xs py-1">
+          <span>${i.name} × ${i.quantity || i.qty || 1}</span>
+          <span class="text-orange-400">₹${(i.price * (i.quantity || i.qty || 1)).toLocaleString()}</span>
+        </div>`).join('');
+      const total = cart.reduce((s, i) => s + i.price * (i.quantity || i.qty || 1), 0);
+      totalPEl.textContent = '₹' + total.toLocaleString();
+      totalEl.classList.remove('hidden');
+    }
+
+    /* ══════════════════════════════════════
+       FETCH & RENDER PRODUCTS FROM SERVER
+    ══════════════════════════════════════ */
+    async function loadProducts() {
+      const grid = document.getElementById('productGrid');
+      try {
+        const [res, featRes] = await Promise.all([
+          fetch(`${BASE}/api/products`),
+          fetch(`${BASE}/api/featured-products`)
+        ]);
+        const data = await res.json();
+        const featuredData = await featRes.json().catch(() => []);
+        window.products = data;
+        window.featuredProducts = featuredData;
+
+        if (!data.length && !featuredData.length) {
+          grid.innerHTML = '<p class="text-gray-400 col-span-4 text-center py-10">No products yet. Check back soon!</p>';
+          return;
+        }
+
+        const featuredCards = featuredData.map(p => `
+          <a href="pages/product.html?id=${p._id}" class="product-card glass p-6 rounded-2xl relative ring-1 ring-violet-500/40 block" id="featured-${p._id}">
+            <div class="absolute top-3 right-3 text-[10px] bg-violet-500 text-white font-bold px-2 py-0.5 rounded-full">⭐ FEATURED</div>
+            <div class="h-44 flex items-center justify-center mb-4 bg-white/5 rounded-xl overflow-hidden">
+              <img src="${p.image}" alt="${p.name}"
+                class="max-h-full max-w-full object-contain"
+                onerror="this.outerHTML='<span class=\'text-5xl\'>🛍️</span>'">
+            </div>
+            <div class="text-[10px] text-violet-400 font-bold uppercase mb-1">${p.brand}</div>
+            <h3 class="font-bold mb-2">${p.name}</h3>
+            <div class="flex justify-between items-end">
+              <div class="flex flex-col gap-0.5">
+                ${p.discount && p.originalPrice ? `
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-500 text-xs line-through">₹${Number(p.originalPrice).toLocaleString()}</span>
+                    <span class="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-1.5 py-0.5 rounded">${p.discount}% OFF</span>
+                  </div>
+                  <span class="text-orange-400 font-bold text-lg">₹${Number(p.price).toLocaleString()}</span>
+                ` : `
+                  <span class="text-orange-400 font-bold">₹${Number(p.price).toLocaleString()}</span>
+                `}
+              </div>
+              <button
+                onclick="event.preventDefault(); addToCart('${p._id}')"
+                class="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs transition">
+                🛒 Add
+              </button>
+            </div>
+          </a>`).join('');
+
+        grid.innerHTML = featuredCards + data.map(p => `
+          <a href="pages/product.html?id=${p._id}" class="product-card glass p-6 rounded-2xl relative block" id="product-${p._id}">
+            <div class="h-44 flex items-center justify-center mb-4 bg-white/5 rounded-xl overflow-hidden">
+              <img src="${p.image}" alt="${p.name}"
+                class="max-h-full max-w-full object-contain"
+                onerror="this.outerHTML='<span class=\\'text-5xl\\'>🛍️</span>'">
+            </div>
+            <div class="text-[10px] text-violet-400 font-bold uppercase mb-1">${p.brand}</div>
+            <h3 class="font-bold mb-2">${p.name}</h3>
+            ${p.categories?.length ? `<div class="flex flex-wrap gap-1 mb-2">${p.categories.map(c => `<span class="text-[10px] px-2 py-0.5 bg-violet-500/30 text-violet-300 rounded">${typeof c === 'object' ? c.name : c}</span>`).join('')}</div>` : ''}
+            <div class="flex justify-between items-end">
+              <div class="flex flex-col gap-0.5">
+                ${p.discount && p.originalPrice ? `
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-500 text-xs line-through">₹${Number(p.originalPrice).toLocaleString()}</span>
+                    <span class="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-1.5 py-0.5 rounded">${p.discount}% OFF</span>
+                  </div>
+                  <span class="text-orange-400 font-bold text-lg">₹${Number(p.price).toLocaleString()}</span>
+                ` : `
+                  <span class="text-orange-400 font-bold">₹${Number(p.price).toLocaleString()}</span>
+                `}
+              </div>
+              <button 
+                onclick="event.preventDefault(); addToCart('${p._id}')"
+                class="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs transition">
+                🛒 Add
+              </button>
+            </div>
+          </a>`).join('');
+      } catch (err) {
+        grid.innerHTML = '<p class="text-red-400 col-span-4 text-center py-10">Could not load products. Is the server running?</p>';
+        console.error('Products fetch error:', err);
+      }
+    }
+
+    /* ══════════════════════════════════════
+       FEATURED HERO (right side of banner)
+    ══════════════════════════════════════ */
+    async function loadFeaturedHero() {
+      const card = document.getElementById('featuredHeroCard');
+      try {
+        const res = await fetch(`${BASE}/api/featured-products`);
+        const data = await res.json();
+        if (!data.length) {
+          card.innerHTML = `
+            <div class="flex flex-col items-center text-center">
+              <div class="text-5xl mb-3">🛍️</div>
+              <div class="text-xs text-orange-400 font-bold mb-1">FEATURED</div>
+              <div class="heading text-lg font-bold text-gray-400">Coming Soon</div>
+            </div>`;
+          return;
+        }
+        // Cycle through featured products if more than one
+        let idx = 0;
+        function showFeatured(p) {
+          card.innerHTML = `
+            <a href="pages/product.html?id=${p._id}" class="flex flex-col items-center text-center w-full">
+              <div class="h-28 w-full flex items-center justify-center mb-3 overflow-hidden">
+                <img src="${p.image}" alt="${p.name}"
+                  class="max-h-full max-w-full object-contain rounded-xl"
+                  onerror="this.outerHTML='<span class=\\'text-5xl\\'>🛍️</span>'">
+              </div>
+              <div class="text-xs text-orange-400 font-bold mb-1">FEATURED</div>
+              <div class="heading text-base font-bold leading-tight">${p.name}</div>
+              <div class="text-violet-400 text-xs mt-1">${p.brand}</div>
+              ${p.discount && p.originalPrice ? `
+                <div class="flex items-center justify-center gap-2 mt-1">
+                  <span class="text-gray-500 text-xs line-through">₹${Number(p.originalPrice).toLocaleString()}</span>
+                  <span class="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-1.5 py-0.5 rounded">${p.discount}% OFF</span>
+                </div>
+                <div class="text-orange-400 font-bold text-lg">₹${Number(p.price).toLocaleString()}</div>
+              ` : `
+                <div class="text-orange-400 font-bold mt-1">₹${Number(p.price).toLocaleString()}</div>
+              `}
+              <button onclick="event.preventDefault(); addToCart('${p._id}')" class="mt-3 btn-primary px-4 py-1.5 rounded-lg text-xs w-full">🛒 Add to Cart</button>
+            </a>`;
+        }
+        showFeatured(data[0]);
+        if (data.length > 1) {
+          setInterval(() => {
+            idx = (idx + 1) % data.length;
+            showFeatured(data[idx]);
+          }, 4000);
+        }
+      } catch (err) {
+        console.error('Featured hero fetch error:', err);
+      }
+    }
+
+    /* ══════════════════════════════════════
+       FLASH DEALS — JS conveyor belt (no duplicates, true right→left loop)
+    ══════════════════════════════════════ */
+    async function loadFlashDeals() {
+      const track = document.getElementById('dealsTrack');
+      try {
+        const res = await fetch(`${BASE}/api/products`);
+        const data = await res.json();
+        const discounted = data.filter(p => p.discount && p.discount > 0)
+                               .sort((a, b) => (b.discount || 0) - (a.discount || 0))
+                               .slice(0, 8);
+        if (!discounted.length) {
+          track.innerHTML = '<p class="text-gray-400 px-6 py-10">No deals right now. Check back soon!</p>';
+          track.style.height = 'auto';
+          return;
+        }
+
+        const CARD_W   = 260; // px  (must match CSS .deal-card width)
+        const GAP      = 20;  // px between cards
+        const STEP     = CARD_W + GAP;
+        const SPEED    = 80;  // px per second
+        const n        = discounted.length;
+        const totalW   = n * STEP;
+
+        // Build card elements
+        track.innerHTML = '';
+        const containerW = track.parentElement.offsetWidth || window.innerWidth;
+
+        discounted.forEach((p, i) => {
+          const card = document.createElement('div');
+          card.className = 'deal-card glass p-5 rounded-3xl flex flex-col items-center gap-3 hover:bg-white/10 transition cursor-pointer';
+          // Click to go to product page
+          card.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+              window.location.href = `pages/product.html?id=${p._id}`;
+            }
+          };
+          
+          // Build card content safely to avoid quote-escaping issues in onerror
+          const imgWrap = document.createElement('div');
+          imgWrap.className = 'h-24 w-full flex items-center justify-center overflow-hidden';
+          const img = document.createElement('img');
+          img.src = p.image || '';
+          img.alt = p.name || '';
+          img.className = 'max-h-full max-w-full object-contain rounded-lg';
+          img.onerror = function() {
+            this.style.display = 'none';
+            this.parentNode.innerHTML = '<span style="font-size:2rem;opacity:0.4">🛍️</span>';
+          };
+          imgWrap.appendChild(img);
+
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'text-center w-full';
+          infoDiv.innerHTML = `
+            <div class="text-xs bg-orange-500/20 text-orange-500 px-2 py-0.5 rounded inline-block mb-1 font-bold">${p.discount}% OFF</div>
+            <h3 class="font-bold text-sm leading-tight mb-0.5">${p.name}</h3>
+            <p class="text-orange-400 font-bold text-sm">₹${Number(p.price).toLocaleString()}</p>
+            ${p.originalPrice ? `<p class="text-gray-500 text-xs line-through">₹${Number(p.originalPrice).toLocaleString()}</p>` : ''}`;
+
+          const btn = document.createElement('button');
+          btn.className = 'btn-primary px-4 py-1.5 rounded-lg text-xs w-full';
+          btn.textContent = '🛒 Add to Cart';
+          btn.onclick = (e) => { e.stopPropagation(); addToCart(p._id); };
+
+          card.appendChild(imgWrap);
+          card.appendChild(infoDiv);
+          card.appendChild(btn);
+
+          // Stagger start positions: card 0 starts at right edge, card 1 one STEP further right, etc.
+          card.dataset.x = containerW + i * STEP;
+          card.style.transform = `translateX(${card.dataset.x}px)`;
+          track.appendChild(card);
+        });
+
+        // Animation loop
+        let last = null;
+        let paused = false;
+        track.closest('.deals-container').addEventListener('mouseenter', () => paused = true);
+        track.closest('.deals-container').addEventListener('mouseleave', () => paused = false);
+
+        function tick(ts) {
+          if (!last) last = ts;
+          const dt = (ts - last) / 1000; // seconds
+          last = ts;
+
+          if (!paused) {
+            const cards = track.querySelectorAll('.deal-card');
+            cards.forEach(card => {
+              let x = parseFloat(card.dataset.x) - SPEED * dt;
+              // When a card has fully exited left (right edge < 0), wrap it to after the rightmost card
+              if (x + CARD_W < 0) {
+                // Find the maximum x among all cards and place this one STEP after it
+                let maxX = -Infinity;
+                cards.forEach(c => { const cx = parseFloat(c.dataset.x); if (cx > maxX) maxX = cx; });
+                x = maxX + STEP;
+              }
+              card.dataset.x = x;
+              card.style.transform = `translateX(${x}px)`;
+            });
+          }
+
+          requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+
+      } catch (err) {
+        console.error('Flash deals fetch error:', err);
+        track.innerHTML = '<p class="text-red-400 px-6 py-10">Could not load deals.</p>';
+        track.style.height = 'auto';
+      }
+    }
+
+    /* ══════════════════════════════════════
+       AUTH MODAL
+    ══════════════════════════════════════ */
+    let authMode = 'login';
+
+    function openAuth(mode = 'login') {
+      switchTab(mode);
+      document.getElementById('authModal').classList.remove('hidden');
+      document.getElementById('authModal').classList.add('flex');
+    }
+    function closeAuth() {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('authModal').classList.remove('flex');
+      document.getElementById('authMsg').classList.add('hidden');
+    }
+    function switchTab(mode) {
+      authMode = mode;
+      const isLogin = mode === 'login';
+      document.getElementById('authSubmitBtn').textContent = isLogin ? 'Login' : 'Create Account';
+      document.getElementById('tabLogin').className    = isLogin
+        ? 'flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition btn-primary'
+        : 'flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition glass hover:bg-white/10';
+      document.getElementById('tabRegister').className = !isLogin
+        ? 'flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition btn-primary'
+        : 'flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition glass hover:bg-white/10';
+      document.getElementById('switchHint').textContent = isLogin ? "Don't have an account?" : 'Already have one?';
+      document.getElementById('switchLink').textContent = isLogin ? 'Register' : 'Login';
+      document.getElementById('switchLink').onclick     = () => switchTab(isLogin ? 'register' : 'login');
+      document.getElementById('authMsg').classList.add('hidden');
+      // Show username field only on register
+      const usernameEl = document.getElementById('authUsername');
+      if (isLogin) {
+        usernameEl.classList.add('hidden');
+        usernameEl.value = '';
+      } else {
+        usernameEl.classList.remove('hidden');
+      }
+    }
+
+    async function submitAuth() {
+      const email    = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const username = document.getElementById('authUsername').value.trim();
+      const msgEl    = document.getElementById('authMsg');
+      if (!email || !password) { showMsg(msgEl, 'Please fill in all fields.', 'red'); return; }
+      if (authMode === 'register' && !username) { showMsg(msgEl, 'Please enter a username.', 'red'); return; }
+      const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+      try {
+        const res  = await fetch(`${BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, username })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (authMode === 'login') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            updateAccountUI(data.user.email, data.user.username);
+            closeAuth();
+          } else {
+            showMsg(msgEl, 'Account created! You can now login.', 'green');
+            setTimeout(() => switchTab('login'), 1500);
+          }
+        } else {
+          showMsg(msgEl, data.message || 'Something went wrong.', 'red');
+        }
+      } catch {
+        showMsg(msgEl, 'Server not reachable. Is it running?', 'red');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      updateAccountUI(null);
+    }
+
+    function updateAccountUI(email, username) {
+      const openBtn  = document.getElementById('openAuthBtn');
+      const userMenu = document.getElementById('userMenu');
+      const loggedEl = document.getElementById('loggedEmail');
+      const btnEl    = document.getElementById('userEmailBtn');
+      if (email) {
+        openBtn.classList.add('hidden');
+        userMenu.classList.remove('hidden');
+        loggedEl.textContent = email;
+        btnEl.textContent = (username || email);
+        // sync drawer
+        const dOpen = document.getElementById('drawerOpenAuthBtn');
+        const dMenu = document.getElementById('drawerUserMenu');
+        const dEmail = document.getElementById('drawerLoggedEmail');
+        if (dOpen) dOpen.classList.add('hidden');
+        if (dMenu) dMenu.classList.remove('hidden');
+        if (dEmail) dEmail.textContent = email;
+        // mobile bottom nav label
+        const mobLabel = document.getElementById('mobAuthLabel');
+        if (mobLabel) mobLabel.textContent = username ? username.split(' ')[0] : 'Hi 👋';
+      } else {
+        openBtn.classList.remove('hidden');
+        userMenu.classList.add('hidden');
+        btnEl.textContent = 'Hi 👋';
+        // sync drawer
+        const dOpen = document.getElementById('drawerOpenAuthBtn');
+        const dMenu = document.getElementById('drawerUserMenu');
+        if (dOpen) dOpen.classList.remove('hidden');
+        if (dMenu) dMenu.classList.add('hidden');
+        // mobile bottom nav label
+        const mobLabel = document.getElementById('mobAuthLabel');
+        if (mobLabel) mobLabel.textContent = 'Account';
+      }
+    }
+
+    /* ══════════════════════════════════════
+       COMPLAINT MODAL
+    ══════════════════════════════════════ */
+    function openComplaint() {
+      document.getElementById('complaintModal').classList.remove('hidden');
+      document.getElementById('complaintModal').classList.add('flex');
+    }
+    function closeComplaint() {
+      document.getElementById('complaintModal').classList.add('hidden');
+      document.getElementById('complaintModal').classList.remove('flex');
+    }
+    async function submitComplaint() {
+      const email   = document.getElementById('cEmail').value.trim();
+      const message = document.getElementById('cMessage').value.trim();
+      const msgEl   = document.getElementById('cMsg');
+      if (!email || !message) { showMsg(msgEl, 'Please fill both fields.', 'red'); return; }
+      try {
+        const res  = await fetch(`${BASE}/api/complaints`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, message })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showMsg(msgEl, "✅ Complaint submitted. We'll be in touch!", 'green');
+          document.getElementById('cEmail').value   = '';
+          document.getElementById('cMessage').value = '';
+          setTimeout(closeComplaint, 2000);
+        } else { showMsg(msgEl, 'Failed to submit. Try again.', 'red'); }
+      } catch { showMsg(msgEl, 'Server not reachable.', 'red'); }
+    }
+
+    /* ══════════════════════════════════════
+       HELPERS
+    ══════════════════════════════════════ */
+    function showMsg(el, text, color) {
+      el.textContent = text;
+      el.className   = `text-xs text-center ${color === 'green' ? 'text-green-400' : 'text-red-400'}`;
+      el.classList.remove('hidden');
+    }
+    function toggleTheme() {
+      const html = document.documentElement;
+      const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+      html.dataset.theme = next;
+      localStorage.setItem('nb-theme', next);
+    }
+    function goSearch() {
+      const input = document.getElementById('navSearch');
+      const q = input ? input.value.trim() : '';
+      if (q) {
+        window.location.href = `pages/search.html?q=${encodeURIComponent(q)}&mode=search`;
+      } else {
+        window.location.href = 'pages/search.html?mode=search';
+      }
+    }
+    function goCat(catName) {
+      window.location.href = `pages/search.html?cat=${encodeURIComponent(catName)}&mode=search`;
+    }
+
+    /* ══════════════════════════════════════
+       RECENT ORDER DISPLAY
+    ══════════════════════════════════════ */
+    function loadRecentOrder() {
+      const order = JSON.parse(localStorage.getItem('lastOrder'));
+      if (!order) return;
+
+      const section = document.getElementById('recentOrderSection');
+      const orderId = document.getElementById('recentOrderId');
+      const orderTotal = document.getElementById('recentOrderTotal');
+      const orderItems = document.getElementById('recentOrderItems');
+      const orderStatus = document.getElementById('orderStatus');
+      const deliveryStatus = document.getElementById('deliveryStatus');
+
+      section.classList.remove('hidden');
+      orderId.textContent = order.orderId ? '#' + order.orderId.substring(0, 8).toUpperCase() : '#NB' + Math.floor(Math.random() * 100000);
+      orderTotal.textContent = '₹' + Number(order.total || 0).toLocaleString();
+
+      // Status styling
+      const status = order.status || 'Placed';
+      orderStatus.textContent = status;
+      orderStatus.className = 'px-3 py-1 rounded-full text-sm font-semibold ' + 
+        (status === 'Delivered' ? 'bg-green-600 text-white' : 
+         status === 'Shipped' ? 'bg-blue-600 text-white' : 
+         status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white');
+
+      deliveryStatus.textContent = status === 'Placed' ? '📦 Processing' : 
+                                   status === 'Shipped' ? '🚚 Out for Delivery' : 
+                                   status === 'Delivered' ? '✅ Delivered' : status;
+      deliveryStatus.className = 'font-semibold ' + 
+        (status === 'Delivered' ? 'text-green-400' : 'text-yellow-400');
+
+      // Items list
+      const items = order.items || [];
+      orderItems.innerHTML = items.map(item => {
+        const qty = item.quantity || item.qty || 1;
+        return `<div class="flex justify-between"><span>${item.name} × ${qty}</span><span class="text-orange-400">₹${(item.price * qty).toLocaleString()}</span></div>`;
+      }).join('');
+    }
+
+    function clearRecentOrder() {
+      localStorage.removeItem('lastOrder');
+      document.getElementById('recentOrderSection').classList.add('hidden');
+    }
+
+    /* ══════════════════════════════════════
+       SCROLL REVEAL
+    ══════════════════════════════════════ */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    /* ══════════════════════════════════════
+       INIT
+    ══════════════════════════════════════ */
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+    const u = JSON.parse(savedUser);
+    updateAccountUI(u.email, u.username);
+    }
+
+    cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    loadProducts();
+    loadFeaturedHero();
+    loadFlashDeals();
+    renderCart();
+    loadRecentOrder();
+
+    window.addEventListener("focus", () => {
+      cart = JSON.parse(localStorage.getItem("cart")) || [];
+      renderCart();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        cart = JSON.parse(localStorage.getItem("cart")) || [];
+        renderCart();
+      }
+    });
+    window.addEventListener("storage", () => {
+        cart = JSON.parse(localStorage.getItem("cart")) || [];
+        renderCart();
+      });
+
+    window.addEventListener("pageshow", () => {
+      cart = JSON.parse(localStorage.getItem("cart")) || [];
+      renderCart();
+    });
+
+    let lastCartUpdate = localStorage.getItem("cartUpdated");
+
+    setInterval(() => {
+      const updated = localStorage.getItem("cartUpdated");
+      if (updated !== lastCartUpdate) {
+        lastCartUpdate = updated;
+        cart = JSON.parse(localStorage.getItem("cart")) || [];
+        renderCart();
+      }
+    }, 500);
+
+    window.addEventListener("unload", () => {
+      cart = JSON.parse(localStorage.getItem("cart")) || [];
+    });
+
+    function goToCart() {
+      localStorage.setItem("cart", JSON.stringify(cart));
+      window.location.href = "/pages/cart.html";
+    }
+  </script>
+</body>
+</html>

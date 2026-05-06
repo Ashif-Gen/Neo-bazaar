@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Confirmed — Neo-Bazaar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0b0918; --surface: #121020; --card: #1a1730;
+      --border: #2a2248; --purple: #a78bfa; --orange: #f97316;
+      --text: #e2deff; --muted: #6b5fa0; --success: #22c55e;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+    /* STARS BG */
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .star { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; animation: twinkle var(--dur, 3s) ease-in-out infinite; opacity: 0; }
+    @keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--op,.7)} }
+
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10; }
+    .nav-logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; background: linear-gradient(90deg, #a78bfa, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+
+    .main { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 48px 20px; }
+
+    /* SUCCESS HERO */
+    .hero { text-align: center; margin-bottom: 40px; }
+    .orbit { width: 120px; height: 120px; margin: 0 auto 28px; position: relative; }
+    .orbit-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #a78bfa33; animation: orbit-spin 4s linear infinite; }
+    .orbit-ring::after { content: ''; position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; background: var(--purple); border-radius: 50%; margin-left: -5px; box-shadow: 0 0 10px var(--purple); }
+    @keyframes orbit-spin { to { transform: rotate(360deg); } }
+    .check-core { position: absolute; inset: 16px; background: radial-gradient(circle, #22c55e22, #22c55e08); border: 2px solid var(--success); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: pop .5s cubic-bezier(.34,1.56,.64,1) .2s both; }
+    @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .check-icon { font-size: 36px; animation: pop .4s cubic-bezier(.34,1.56,.64,1) .5s both; }
+    .hero h1 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 10px; animation: fadeUp .5s ease .3s both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .hero .tagline { font-size: 15px; color: var(--muted); line-height: 1.7; animation: fadeUp .5s ease .4s both; }
+    .fun-msg { margin-top: 16px; padding: 14px 20px; background: linear-gradient(135deg, #1a0e2e, #1e1020); border: 1px solid #3d2060; border-radius: 12px; font-size: 14px; color: #c4b5fd; line-height: 1.7; animation: fadeUp .5s ease .6s both; }
+
+    /* ORDER CARD */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; animation: fadeUp .5s ease .5s both; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .card-title::before { content:''; display:block; width:3px; height:14px; background:var(--purple); border-radius:2px; }
+
+    .order-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .meta-box { background: #120f22; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .meta-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .meta-val { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
+    .meta-val.purple { color: var(--purple); }
+    .meta-val.orange { color: var(--orange); }
+
+    .item-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .item-row:last-child { border-bottom: none; }
+    .item-emoji { width: 40px; height: 40px; background: #2a2248; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; overflow: hidden; }
+    .item-emoji img { width:100%;height:100%;object-fit:cover;border-radius:8px; }
+    .item-name { flex: 1; font-size: 13px; font-weight: 500; }
+    .item-qty { font-size: 11px; color: var(--muted); }
+    .item-price { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--orange); }
+
+    .summary-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: var(--muted); }
+    .summary-row.total { font-size: 16px; font-weight: 700; color: var(--text); font-family: 'Syne', sans-serif; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 12px; }
+    .summary-row.total span:last-child { color: var(--orange); }
+    .green { color: var(--success) !important; }
+    .red { color: var(--orange) !important; }
+
+    /* TRACK STEPS */
+    .track { display: flex; align-items: flex-start; gap: 0; }
+    .track-step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .track-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: 'Syne', sans-serif; z-index: 1; }
+    .track-dot.done { background: var(--success); color: #fff; }
+    .track-dot.active { background: var(--purple); color: #fff; box-shadow: 0 0 0 5px #a78bfa20; }
+    .track-dot.pending { background: var(--border); color: var(--muted); }
+    .track-line { height: 2px; flex: 1; margin-top: 13px; }
+    .track-line.done { background: var(--success); }
+    .track-line.pending { background: var(--border); }
+    .track-label { font-size: 10px; color: var(--muted); text-align: center; margin-top: 6px; line-height: 1.4; }
+
+    /* ACTIONS */
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; animation: fadeUp .5s ease .7s both; }
+    .btn-home { flex: 1; min-width: 140px; padding: 14px; background: linear-gradient(135deg, #7c3aed, #f97316); border: none; border-radius: 12px; color: #fff; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: opacity .2s; }
+    .btn-home:hover { opacity: .9; }
+    .btn-outline { flex: 1; min-width: 140px; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; background: transparent; color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+    .btn-outline:hover { border-color: var(--purple); color: var(--purple); }
+
+    /* CONFETTI */
+    .confetti-piece { position: fixed; width: 8px; height: 8px; top: -10px; animation: confetti-fall linear forwards; z-index: 100; pointer-events: none; }
+    @keyframes confetti-fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<nav>
+  <a href="../index.html" class="nav-logo">Neo-Bazaar</a>
+  <span style="font-size:12px;color:var(--muted)">Order Confirmed</span>
+</nav>
+
+<div class="main">
+  <div class="hero">
+    <div class="orbit">
+      <div class="orbit-ring"></div>
+      <div class="check-core"><span class="check-icon">✓</span></div>
+    </div>
+    <h1>Order Confirmed! 🚀</h1>
+    <p class="tagline" id="heroName">Thank you for shopping with Neo-Bazaar.</p>
+    <div class="fun-msg">
+      🌌 Your product is delivered in a <strong>parallel universe in 2080</strong> 😄<br/>
+      In this universe, estimated delivery is <strong id="deliveryDate">May 3–5, 2026</strong>. We'll send updates to your email.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Order details</div>
+    <div class="order-meta">
+      <div class="meta-box"><div class="meta-label">Order ID</div><div class="meta-val purple" id="orderId">#NB-XXXXXXXX</div></div>
+      <div class="meta-box"><div class="meta-label">Payment</div><div class="meta-val" id="payMethod">Cash on Delivery</div></div>
+      <div class="meta-box"><div class="meta-label">Status</div><div class="meta-val green">✓ Processing</div></div>
+      <div class="meta-box"><div class="meta-label">Total paid</div><div class="meta-val orange" id="orderTotal">₹0</div></div>
+    </div>
+
+    <div id="orderItems"></div>
+
+    <div style="margin-top:16px" id="summaryBlock"></div>
+  </div>
+
+  <div class="card" style="animation-delay:.6s">
+    <div class="card-title">Delivery tracking</div>
+    <div class="track">
+      <div class="track-step">
+        <div class="track-dot done">✓</div>
+        <div class="track-label">Order<br/>Placed</div>
+      </div>
+      <div class="track-line done"></div>
+      <div class="track-step">
+        <div class="track-dot active">2</div>
+        <div class="track-label">Processing</div>
+      </div>
+      <div class="track-line pending"></div>
+      <div class="track-step">
+        <div class="track-dot pending">3</div>
+        <div class="track-label">Shipped</div>
+      </div>
+      <div class="track-line pending"></div>
+      <div class="track-step">
+        <div class="track-dot pending">4</div>
+        <div class="track-label">Out for<br/>Delivery</div>
+      </div>
+      <div class="track-line pending"></div>
+      <div class="track-step">
+        <div class="track-dot pending">✓</div>
+        <div class="track-label">Delivered</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="../index.html" class="btn-home">← Continue Shopping</a>
+    <a href="orders.html" class="btn-outline">View My Orders</a>
+  </div>
+</div>
+
+<script>
+  // STARS
+  const starsEl = document.getElementById("stars");
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement("div");
+    s.className = "star";
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${2+Math.random()*4}s;--op:${.3+Math.random()*.7};animation-delay:${Math.random()*4}s`;
+    starsEl.appendChild(s);
+  }
+
+  // CONFETTI
+  const colors = ["#a78bfa","#f97316","#22c55e","#f9a8d4","#60a5fa","#fbbf24"];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const c = document.createElement("div");
+      c.className = "confetti-piece";
+      c.style.cssText = `left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.5}s;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }, i * 30);
+  }
+
+  // DELIVERY DATE
+  const today = new Date();
+  const d1 = new Date(2080, today.getMonth(), today.getDate() + 3);
+  const d2 = new Date(2080, today.getMonth(), today.getDate() + 5);
+  const fmt = d => d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  document.getElementById("deliveryDate").textContent = `${fmt(d1)} – ${fmt(d2)}`;
+
+  // LOAD ORDER
+  function loadOrder() {
+    try {
+      const raw = localStorage.getItem("lastOrder");
+      if (!raw) return;
+      const order = JSON.parse(raw);
+
+      if (order.orderId) document.getElementById("orderId").textContent = "#" + order.orderId;
+      if (order.name) document.getElementById("heroName").textContent = `Thank you, ${order.name.split(" ")[0]}! Your order is confirmed.`;
+      
+      const payLabels = { cod: "Cash on Delivery", upi: "UPI", card: "Credit / Debit Card" };
+      if (order.paymentMethod) document.getElementById("payMethod").textContent = payLabels[order.paymentMethod] || order.paymentMethod;
+
+      // Items
+      const itemsEl = document.getElementById("orderItems");
+      if (order.items && order.items.length) {
+        order.items.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "item-row";
+          const thumb = item.image
+            ? `<div class="item-emoji"><img src="${item.image}" alt="${item.name}"/></div>`
+            : `<div class="item-emoji">${item.emoji || "📦"}</div>`;
+          div.innerHTML = `${thumb}<div class="item-name">${item.name}<div class="item-qty">Qty: ${item.quantity || 1}</div></div><div class="item-price">₹${(item.price*(item.quantity||1)).toLocaleString("en-IN")}</div>`;
+          itemsEl.appendChild(div);
+        });
+
+        const delivery = order.delivery || 0;
+        // Use saved values if present (from promo-applied checkout), else fallback calculation
+        const subtotal = order.subtotal != null
+          ? order.subtotal
+          : order.items.reduce((s, i) => s + i.price * (i.quantity || 1), 0);
+        const discount = order.discount != null
+          ? order.discount
+          : 0;
+        const gst = order.gst != null
+          ? order.gst
+          : Math.round((subtotal - discount) * 0.18);
+        const total = order.total != null
+          ? order.total
+          : subtotal - discount + gst + delivery;
+
+        document.getElementById("orderTotal").textContent = "₹" + total.toLocaleString("en-IN");
+
+        const discountLine = discount > 0
+          ? `<div class="summary-row"><span>Discount${order.promoCode ? ` (${order.promoCode})` : ''}</span><span style="color:#f97316">−₹${discount.toLocaleString("en-IN")}</span></div>`
+          : '';
+
+        document.getElementById("summaryBlock").innerHTML = `
+          <div class="summary-row"><span>Subtotal</span><span>₹${subtotal.toLocaleString("en-IN")}</span></div>
+          <div class="summary-row"><span>Delivery</span><span style="color:${delivery === 0 ? '#22c55e' : '#e2deff'}">${delivery === 0 ? 'FREE' : '₹' + delivery.toLocaleString("en-IN")}</span></div>
+          ${discountLine}
+          <div class="summary-row"><span>GST (18%)</span><span>₹${gst.toLocaleString("en-IN")}</span></div>
+          <div class="summary-row total"><span>Total</span><span>₹${total.toLocaleString("en-IN")}</span></div>`;
+        } 
+    } catch(e) { console.error(e); }
+}
+
+  loadOrder();
+</script>
+</body>
+</html>

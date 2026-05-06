@@ -1,0 +1,3143 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Neo-Bazaar — Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #07060f;
+      --bg-secondary: #0f0d1a;
+      --bg-card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text-primary: #f0eeff;
+      --text-secondary: #9b93c4;
+      --text-muted: #5c5480;
+      --glow-purple: rgba(139,92,246,0.35);
+      --nav-bg: rgba(7,6,15,0.85);
+    }
+    [data-theme="light"] {
+      --bg-primary: #f8f7ff;
+      --bg-secondary: #ffffff;
+      --bg-card: rgba(0,0,0,0.03);
+      --border: rgba(0,0,0,0.08);
+      --text-primary: #121026;
+      --text-secondary: #5b5480;
+      --text-muted: #918ba8;
+      --nav-bg: rgba(248,247,255,0.9);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: background 0.4s, color 0.4s;
+    }
+    h1, h2, h3, .heading { font-family: 'Syne', sans-serif; }
+
+    .mesh-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(251, 146, 60, 0.08) 0%, transparent 50%);
+    }
+
+    .glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #fb923c 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #fb923c 100%);
+      color: white;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .nav-tab { 
+      transition: all 0.3s ease;
+      border-bottom: 4px solid transparent;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    .nav-tab:hover {
+      color: var(--text-primary);
+    }
+    .nav-tab.active {
+      border-bottom: 4px solid #7c3aed;
+      color: #a78bfa;
+    }
+  </style>
+</head>
+<body>
+      <!-- LOGIN OVERLAY -->
+    <div id="loginOverlay" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur">
+      <div class="w-full max-w-md bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-2xl">
+        
+        <h2 class="text-2xl font-bold text-center text-violet-400 mb-6">
+          Admin Login
+        </h2>
+
+        <div class="space-y-4">
+          <input id="adminUser" type="text"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
+            placeholder="Username">
+
+          <input id="adminPass" type="password"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white"
+            placeholder="Password">
+
+          <button onclick="loginAdmin()"
+            class="w-full bg-gradient-to-r from-violet-600 to-orange-500 text-white font-bold py-3 rounded-lg hover:opacity-90 transition">
+            Login
+          </button>
+
+          <p id="loginError" class="text-red-400 text-sm text-center hidden">
+            Invalid credentials
+          </p>
+        </div>
+
+      </div>
+    </div>
+  <div class="mesh-bg"></div>
+
+  <!-- NAVIGATION -->
+  <nav class="h-16 flex items-center px-6 md:px-12">
+    <div class="flex items-center gap-2">
+      <img src="../assets/img/NeoB_img.jpeg" class="w-20 h-20 object-contain">
+      <span class="heading text-xl font-extrabold tracking-tighter grad-text">Neo-Bazaar Admin</span>
+    </div>
+    <div class="ml-auto flex items-center gap-4">
+      <button onclick="toggleTheme()" class="glass px-3 py-1 rounded-full text-sm">🌗</button>
+      <a href="/" class="glass px-5 py-1.5 rounded-full text-sm hover:bg-white/10 transition">Store</a>
+      <button onclick="logoutAdmin()" class="btn-primary px-5 py-1.5 rounded-full text-sm">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Navigation Tabs -->
+  <nav class="fixed top-16 left-0 right-0 z-50 h-14 px-6 md:px-12 bg-gradient-to-b from-var(--nav-bg) to-transparent">
+    <div class="flex items-center gap-8 h-14 max-w-7xl mx-auto">
+      <button onclick="switchTab('products')" class="nav-tab active text-sm md:text-base">
+        Products
+      </button>
+      <button onclick="switchTab('featured')" class="nav-tab text-sm md:text-base">
+        Featured
+      </button>
+      <button onclick="switchTab('complaints')" class="nav-tab text-sm md:text-base">
+        Complaints
+      </button>
+      <button onclick="switchTab('orders')" class="nav-tab text-sm md:text-base">
+        Orders
+      </button>
+      <button onclick="switchTab('promo')" class="nav-tab text-sm md:text-base">
+        Promo Codes
+      </button>
+    </div>
+  </nav>
+
+  <div class="relative z-10 max-w-7xl mx-auto pt-32 px-6 md:px-12 pb-12">
+
+  <!-- PRODUCTS TAB -->
+  <div id="products-tab" class="tab-content active">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 items-start">
+      <!-- Add Product Form -->
+      <div class="lg:col-span-1">
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700 sticky top-24">
+          <h2 class="text-xl font-bold mb-6 text-green-400">Add New Product</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Product Name</label>
+              <input id="prodName" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" placeholder="Wireless Headphones">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Brand</label>
+              <input id="prodBrand" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" placeholder="Brand name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">MSRP / Original Price (₹) <span class="text-gray-500 font-normal">— listed / market price</span></label>
+              <input id="prodOriginalPrice" type="number" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" placeholder="1999.99 (optional)" oninput="prodCalcFromMsrp()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Sell Price (₹) <span class="text-gray-500 font-normal">— what the customer pays</span></label>
+              <input id="prodPrice" type="number" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" placeholder="999.99" oninput="prodCalcFromSellPrice()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Discount % <span class="text-gray-500 font-normal">— items &gt;50% appear in deals ticker</span></label>
+              <input id="prodDiscount" type="number" min="0" max="100" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" placeholder="65 (optional)" oninput="prodCalcFromDiscount()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Image URL</label>
+              <input id="prodImage" type="url" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" placeholder="https://example.com/image.jpg">
+            </div>
+            
+            <!-- CATEGORIES SECTION -->
+            <div class="border-t border-gray-600 pt-4 mt-4">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-sm font-medium text-gray-300">Categories</label>
+                <button type="button" onclick="openCategoryManager()" class="text-xs text-green-400 hover:text-green-300 underline">Manage Categories</button>
+              </div>
+              
+              <!-- Selected Categories Display -->
+              <div id="selectedCategories" class="flex flex-wrap gap-2 mb-3 min-h-[32px]">
+                <!-- Selected category tags will appear here -->
+              </div>
+              <input type="hidden" id="prodCategories" value="[]">
+              
+              <!-- Category Search -->
+              <div class="relative">
+                <input 
+                  id="categorySearch" 
+                  type="text" 
+                  class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-green-500" 
+                  placeholder="Search or add categories..."
+                  autocomplete="off"
+                  oninput="searchCategories(this.value)"
+                  onfocus="showCategoryDropdown()"
+                >
+                <!-- Category Dropdown -->
+                <div id="categoryDropdown" class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg max-h-60 overflow-y-auto hidden">
+                  <!-- Categories will be populated here -->
+                </div>
+              </div>
+              
+              <!-- Subcategories for Selected Category -->
+              <div id="subcategorySection" class="mt-3 hidden">
+                <label class="block text-xs font-medium text-gray-400 mb-2">Subcategories (optional)</label>
+                <div id="subcategoryList" class="flex flex-wrap gap-2">
+                  <!-- Subcategory checkboxes will appear here -->
+                </div>
+              </div>
+            </div>
+            
+            <button id="addProductBtn" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 rounded-lg transition shadow-lg">
+              Add Product
+            </button>
+
+            <!-- EXPANDABLE EXTRA DETAILS -->
+            <div class="border-t border-gray-600 pt-3">
+              <button type="button" onclick="toggleAddProductDetails()" class="w-full flex items-center justify-between text-sm text-gray-400 hover:text-white transition">
+                <span id="addDetailsToggleLabel">▶ Add more details (description, specs, stock…)</span>
+              </button>
+              <div id="addProductDetails" class="hidden mt-4 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">SKU / Product Code</label>
+                    <input id="prodSku" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="e.g. WH-XM5-BLK">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Stock Quantity</label>
+                    <input id="prodStock" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="0">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Tags <span class="text-gray-500 font-normal">— comma separated</span></label>
+                  <input id="prodTags" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="wireless, noise cancelling">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                  <textarea id="prodDescription" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="Full product description..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Highlights <span class="text-gray-500 font-normal">— bullet features</span></label>
+                  <div id="addHighlightsList" class="space-y-1 mb-2 text-xs text-gray-400">None added</div>
+                  <div class="flex gap-2">
+                    <input id="addHighlightInput" type="text" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="e.g. 30hr battery" onkeypress="if(event.key==='Enter')addNewHighlight()">
+                    <button onclick="addNewHighlight()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">+</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Specifications</label>
+                  <div id="addSpecsList" class="space-y-1 mb-2 text-xs text-gray-400">None added</div>
+                  <div class="flex gap-2">
+                    <input id="addSpecKey"   type="text" placeholder="Spec"  class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" onkeypress="if(event.key==='Enter')addNewSpec()">
+                    <input id="addSpecValue" type="text" placeholder="Value" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" onkeypress="if(event.key==='Enter')addNewSpec()">
+                    <button onclick="addNewSpec()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">+</button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Warranty</label>
+                    <input id="prodWarranty" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="1 Year Warranty">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Return Policy</label>
+                    <input id="prodReturnPolicy" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-green-500" placeholder="10-day returns">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Gallery Images <span class="text-gray-500 font-normal">— one URL per line</span></label>
+                  <textarea id="prodImages" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm font-mono focus:outline-none focus:border-green-500" placeholder="https://example.com/img2.jpg&#10;https://example.com/img3.jpg"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Products Grid -->
+      <div class="lg:col-span-2">
+        <h2 class="text-2xl font-bold mb-6 text-green-400">Product Inventory</h2>
+        <div id="adminProductsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-gray-400 col-span-full text-center py-8">Loading products...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURED PRODUCTS TAB -->
+  <div id="featured-tab" class="tab-content">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 items-start">
+      <!-- Add Featured Product Form -->
+      <div class="lg:col-span-1">
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700 sticky top-24">
+          <h2 class="text-xl font-bold mb-6 text-violet-400">Add Featured Product</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Product Name</label>
+              <input id="featName" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="Wireless Headphones">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Brand</label>
+              <input id="featBrand" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="Brand name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">MSRP / Original Price (₹) <span class="text-gray-500 font-normal">— listed / market price</span></label>
+              <input id="featOriginalPrice" type="number" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="1999.99 (optional)" oninput="featCalcFromMsrp()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Sell Price (₹) <span class="text-gray-500 font-normal">— what the customer pays</span></label>
+              <input id="featPrice" type="number" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="999.99" oninput="featCalcFromSellPrice()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Discount % <span class="text-gray-500 font-normal">— auto-calculated or enter manually</span></label>
+              <input id="featDiscount" type="number" min="0" max="100" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="65 (optional)" oninput="featCalcFromDiscount()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Image URL</label>
+              <input id="featImage" type="url" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="https://example.com/image.jpg">
+            </div>
+
+            <!-- CATEGORIES SECTION -->
+            <div class="border-t border-gray-600 pt-4 mt-4">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-sm font-medium text-gray-300">Categories</label>
+                <button type="button" onclick="openCategoryManager()" class="text-xs text-violet-400 hover:text-violet-300 underline">Manage Categories</button>
+              </div>
+              <div id="featSelectedCategories" class="flex flex-wrap gap-2 mb-3 min-h-[32px]"></div>
+              <input type="hidden" id="featCategories" value="[]">
+              <div class="relative">
+                <input
+                  id="featCategorySearch"
+                  type="text"
+                  class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500"
+                  placeholder="Search or add categories..."
+                  autocomplete="off"
+                  oninput="featSearchCategories(this.value)"
+                  onfocus="featShowCategoryDropdown()"
+                >
+                <div id="featCategoryDropdown" class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg max-h-60 overflow-y-auto hidden"></div>
+              </div>
+              <div id="featSubcategorySection" class="mt-3 hidden">
+                <label class="block text-xs font-medium text-gray-400 mb-2">Subcategories (optional)</label>
+                <div id="featSubcategoryList" class="flex flex-wrap gap-2"></div>
+              </div>
+            </div>
+
+            <button id="addFeaturedBtn" class="w-full bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-bold py-3 rounded-lg transition shadow-lg">
+              Add to Featured
+            </button>
+
+            <!-- EXPANDABLE EXTRA DETAILS -->
+            <div class="border-t border-gray-600 pt-3">
+              <button type="button" onclick="toggleAddFeaturedDetails()" class="w-full flex items-center justify-between text-sm text-gray-400 hover:text-white transition">
+                <span id="addFeatDetailsToggleLabel">▶ Add more details (description, specs, stock…)</span>
+              </button>
+              <div id="addFeaturedDetails" class="hidden mt-4 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">SKU / Product Code</label>
+                    <input id="featSku" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="e.g. WH-XM5-BLK">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Stock Quantity</label>
+                    <input id="featStock" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="0">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Tags <span class="text-gray-500 font-normal">— comma separated</span></label>
+                  <input id="featTags" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="wireless, noise cancelling">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                  <textarea id="featDescription" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="Full product description..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Highlights <span class="text-gray-500 font-normal">— bullet features</span></label>
+                  <div id="addFeatHighlightsList" class="space-y-1 mb-2 text-xs text-gray-400">None added</div>
+                  <div class="flex gap-2">
+                    <input id="addFeatHighlightInput" type="text" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="e.g. 30hr battery" onkeypress="if(event.key==='Enter')addFeatHighlight()">
+                    <button onclick="addFeatHighlight()" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded text-sm">+</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Specifications</label>
+                  <div id="addFeatSpecsList" class="space-y-1 mb-2 text-xs text-gray-400">None added</div>
+                  <div class="flex gap-2">
+                    <input id="addFeatSpecKey"   type="text" placeholder="Spec"  class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" onkeypress="if(event.key==='Enter')addFeatSpec()">
+                    <input id="addFeatSpecValue" type="text" placeholder="Value" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" onkeypress="if(event.key==='Enter')addFeatSpec()">
+                    <button onclick="addFeatSpec()" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded text-sm">+</button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Warranty</label>
+                    <input id="featWarranty" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="1 Year Warranty">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Return Policy</label>
+                    <input id="featReturnPolicy" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500" placeholder="10-day returns">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Gallery Images <span class="text-gray-500 font-normal">— one URL per line</span></label>
+                  <textarea id="featImages" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm font-mono focus:outline-none focus:border-violet-500" placeholder="https://example.com/img2.jpg&#10;https://example.com/img3.jpg"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Featured Products Grid -->
+      <div class="lg:col-span-2">
+        <h2 class="text-2xl font-bold mb-6 text-violet-400">Featured Products</h2>
+        <div id="adminFeaturedGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-gray-400 col-span-full text-center py-8">Loading featured products...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLAINTS TAB -->
+  <div id="complaints-tab" class="tab-content">
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold mb-6 text-yellow-400">Customer Complaints</h2>
+      <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700">
+        <div id="complaintsList" class="space-y-0 max-h-[600px] overflow-y-auto">
+          <p class="text-gray-400 text-center py-12">Loading complaints...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div id="orders-tab" class="tab-content">
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold mb-6 text-blue-400">Order Management</h2>
+      <div id="ordersList" class="space-y-4">
+        <p class="text-gray-400 text-center py-12">Loading orders...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMO CODES TAB -->
+  <div id="promo-tab" class="tab-content">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 items-start">
+      <!-- Add Promo Code Form -->
+      <div class="lg:col-span-1">
+        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6 sticky top-40">
+          <h3 class="text-xl font-bold mb-4 text-pink-400">Add Promo Code</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Code</label>
+              <input id="promoCode" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-pink-500 uppercase" placeholder="e.g., SAVE20">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Discount Type</label>
+              <select id="promoType" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-pink-500">
+                <option value="percent">Percentage (% off)</option>
+                <option value="fixed">Fixed Amount (₹ off)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Discount Value</label>
+              <input id="promoValue" type="number" min="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-pink-500" placeholder="e.g., 20 for 20% or 100 for ₹100">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Min Order Amount (₹)</label>
+              <input id="promoMinAmount" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-pink-500" placeholder="e.g., 1000 (0 = no minimum)">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Usage Limit (0 = unlimited)</label>
+              <input id="promoUsageLimit" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-pink-500" placeholder="e.g., 100 (0 = unlimited)">
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="promoOneTime" type="checkbox" class="w-5 h-5 bg-gray-700 border border-gray-600 rounded text-pink-500 focus:outline-none focus:border-pink-500">
+              <label for="promoOneTime" class="text-sm text-gray-300">One time use per account only</label>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Description (optional)</label>
+              <input id="promoDesc" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-pink-500" placeholder="e.g., 20% off orders above ₹1000">
+            </div>
+            <button onclick="addPromoCode()" class="w-full bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600 text-white font-bold py-3 rounded-lg transition">
+              Add Promo Code
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Promo Codes Grid -->
+      <div class="lg:col-span-2">
+        <h2 class="text-2xl font-bold mb-6 text-pink-400">Active Promo Codes</h2>
+        <div id="promoCodesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-gray-400 col-span-full text-center py-8">Loading promo codes...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = `${window.location.origin}/api`;
+
+// Check if admin is authenticated
+function checkAdminAuth() {
+  const token = localStorage.getItem('adminToken');
+  if (!token) {
+    alert('You must login as admin first');
+    window.location.href = '/';
+  }
+  return token;
+}
+
+// Get auth headers with token
+function getAuthHeaders() {
+  const token = checkAdminAuth();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+}
+
+// Logout admin
+function logoutAdmin() {
+  localStorage.removeItem('adminToken');
+  window.location.href = '/';
+}
+
+// Switch between tabs
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+  document.getElementById(tabName + '-tab').classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Theme Toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('adminTheme', next);
+}
+
+// Load saved theme
+(function loadTheme() {
+  const saved = localStorage.getItem('adminTheme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+function escapeHtml(str = '') {
+  return String(str).replace(/[&<>"]/g, m => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;'
+  }[m]));
+}
+
+/* LOAD PRODUCTS */
+async function loadAdminProducts() {
+  const container = document.getElementById('adminProductsGrid');
+  try {
+    const res = await fetch(`${API_BASE}/products`);
+    const products = await res.json();
+    
+    // Store for category edit modal
+    window.adminProducts = products;
+
+    if (!products.length) {
+      container.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">No products yet</p>';
+      return;
+    }
+
+    container.innerHTML = products.map(p => `
+      <div class="bg-gray-700 border border-gray-600 rounded-lg p-4 hover:border-green-500 transition">
+        <div class="w-full h-40 rounded mb-3 bg-gray-800 flex items-center justify-center overflow-hidden">
+          <img src="${p.image || ''}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="hidden w-full h-full flex-col items-center justify-center text-gray-500">
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span class="text-xs">No Image</span>
+          </div>
+        </div>
+        <p class="font-bold text-white">${escapeHtml(p.name)}</p>
+        <p class="text-sm text-gray-400">${escapeHtml(p.brand || 'N/A')}</p>
+        ${p.categories?.length ? `<div class="flex flex-wrap gap-1 mt-1">${p.categories.map(c => { const cat = typeof c === 'object' ? c : {name: c}; const selectedSubs = p.selectedSubcategories || []; const catSubs = selectedSubs.filter(s => s.startsWith(cat.name + ':')); return `<span class="text-[10px] px-2 py-0.5 bg-violet-500/30 text-violet-300 rounded">${cat.name}${catSubs.length ? ': ' + catSubs.map(s => s.split(':')[1]).join(', ') : ''}</span>`; }).join('')}</div>` : '<p class="text-xs text-gray-500 mt-1">No categories</p>'}
+        <div class="flex flex-wrap gap-1 mt-2">
+          ${p.description ? `<span class="text-[10px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded">📝 Desc</span>` : '<span class="text-[10px] px-1.5 py-0.5 bg-gray-600/50 text-gray-500 rounded">No desc</span>'}
+          ${(p.specifications?.length) ? `<span class="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded">⚙️ ${p.specifications.length} specs</span>` : ''}
+          ${(p.highlights?.length) ? `<span class="text-[10px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded">• ${p.highlights.length} highlights</span>` : ''}
+          ${p.stock > 0 ? `<span class="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-400 rounded">📦 ${p.stock}</span>` : '<span class="text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Out of stock</span>'}
+        </div>
+        <p class="text-green-400 font-bold mt-2">₹${Number(p.price).toLocaleString()}</p>
+        <div class="flex gap-2 mt-3">
+          <button class="edit-product-btn flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded text-xs transition" data-id="${p._id}">
+            ✏️ Edit Product
+          </button>
+          <button class="edit-cat-btn flex-1 bg-violet-600 hover:bg-violet-700 text-white px-2 py-2 rounded text-xs transition" data-id="${p._id}">
+            🏷️ Categories
+          </button>
+          <button class="delete-btn flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-xs transition" data-id="${p._id}">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Delete this product?')) return;
+        const res = await fetch(`${API_BASE}/products/${btn.dataset.id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        if (res.ok) loadAdminProducts();
+        else alert('Delete failed');
+      };
+    });
+
+    document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+      btn.onclick = async () => {
+        await openCategoryEditModal(btn.dataset.id);
+      };
+    });
+
+    document.querySelectorAll('.edit-product-btn').forEach(btn => {
+      btn.onclick = async () => {
+        await openProductEditModal(btn.dataset.id);
+      };
+    });
+  } catch {
+    container.innerHTML = '<p class="text-red-400 col-span-full text-center py-8">Failed loading products</p>';
+  }
+}
+
+/* =============================================
+   CATEGORY MANAGEMENT
+   ============================================= */
+let allCategories = [];
+let selectedCategoryIds = [];
+let selectedSubcategories = [];
+
+// Load all categories from server
+async function loadCategories() {
+  try {
+    const res = await fetch(`${API_BASE}/categories`);
+    allCategories = await res.json();
+  } catch (err) {
+    console.error("Failed to load categories:", err);
+  }
+}
+
+// Search and filter categories
+function searchCategories(query) {
+  const dropdown = document.getElementById('categoryDropdown');
+  if (!query.trim()) {
+    showCategoryDropdown();
+    return;
+  }
+  
+  const filtered = allCategories.filter(cat => 
+    cat.name.toLowerCase().includes(query.toLowerCase()) &&
+    !selectedCategoryIds.includes(cat._id)
+  );
+  
+  // Also show option to create new category if no match
+  const exactMatch = allCategories.find(cat => cat.name.toLowerCase() === query.toLowerCase());
+  
+  let html = filtered.map(cat => `
+    <div class="p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-0" 
+         onclick="selectCategory('${cat._id}', '${escapeHtml(cat.name)}')">
+      <span class="text-white">${escapeHtml(cat.name)}</span>
+      ${cat.subcategories?.length ? `<span class="text-gray-500 text-xs ml-2">(${cat.subcategories.length} subcategories)</span>` : ''}
+    </div>
+  `).join('');
+  
+  if (!exactMatch && query.trim()) {
+    html += `
+      <div class="p-3 hover:bg-gray-700 cursor-pointer border-t border-gray-600 bg-gray-750" 
+           onclick="createAndSelectCategory('${escapeHtml(query.trim())}')">
+        <span class="text-green-400">+ Create "${escapeHtml(query.trim())}"</span>
+      </div>
+    `;
+  }
+  
+  dropdown.innerHTML = html || '<div class="p-3 text-gray-500">No categories found</div>';
+  dropdown.classList.remove('hidden');
+}
+
+// Show all categories in dropdown
+function showCategoryDropdown() {
+  const dropdown = document.getElementById('categoryDropdown');
+  const available = allCategories.filter(cat => !selectedCategoryIds.includes(cat._id));
+  
+  let html = available.map(cat => `
+    <div class="p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-0" 
+         onclick="selectCategory('${cat._id}', '${escapeHtml(cat.name)}')">
+      <span class="text-white">${escapeHtml(cat.name)}</span>
+      ${cat.subcategories?.length ? `<span class="text-gray-500 text-xs ml-2">(${cat.subcategories.length} subcategories)</span>` : ''}
+    </div>
+  `).join('');
+  
+  if (available.length === 0) {
+    html = '<div class="p-3 text-gray-500">No more categories available</div>';
+  }
+  
+  dropdown.innerHTML = html;
+  dropdown.classList.remove('hidden');
+}
+
+// Select a category
+function selectCategory(id, name) {
+  if (selectedCategoryIds.includes(id)) return;
+  
+  selectedCategoryIds.push(id);
+  updateSelectedCategoriesDisplay();
+  document.getElementById('categorySearch').value = '';
+  document.getElementById('categoryDropdown').classList.add('hidden');
+  
+  // Show subcategories for the selected category
+  showSubcategories(id);
+  
+  // Update hidden input
+  updateCategoriesInput();
+}
+
+// Remove a selected category
+function removeCategory(id) {
+  selectedCategoryIds = selectedCategoryIds.filter(cid => cid !== id);
+  selectedSubcategories = selectedSubcategories.filter(s => !s.startsWith(id + ':'));
+  updateSelectedCategoriesDisplay();
+  updateCategoriesInput();
+  
+  // Hide subcategory section if no categories selected
+  if (selectedCategoryIds.length === 0) {
+    document.getElementById('subcategorySection').classList.add('hidden');
+  } else {
+    // Show subcategories for the last selected category
+    showSubcategories(selectedCategoryIds[selectedCategoryIds.length - 1]);
+  }
+}
+
+// Update the selected categories display
+function updateSelectedCategoriesDisplay() {
+  const container = document.getElementById('selectedCategories');
+  const selectedCats = allCategories.filter(cat => selectedCategoryIds.includes(cat._id));
+  
+  container.innerHTML = selectedCats.map(cat => `
+    <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-full text-sm">
+      ${escapeHtml(cat.name)}
+      <button onclick="removeCategory('${cat._id}')" class="hover:text-red-200">×</button>
+    </span>
+  `).join('');
+}
+
+// Show subcategories for a category
+function showSubcategories(categoryId) {
+  const category = allCategories.find(cat => cat._id === categoryId);
+  if (!category) return;
+  
+  const section = document.getElementById('subcategorySection');
+  const list = document.getElementById('subcategoryList');
+  
+  if (!category.subcategories || category.subcategories.length === 0) {
+    // Show input to add new subcategory
+    list.innerHTML = `
+      <div class="w-full">
+        <input type="text" 
+               id="newSubcategory_${categoryId}" 
+               class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm w-full"
+               placeholder="Add subcategory for ${escapeHtml(category.name)}..."
+               onkeypress="if(event.key==='Enter')addSubcategory('${categoryId}', this.value)">
+        <button onclick="addSubcategory('${categoryId}', document.getElementById('newSubcategory_${categoryId}').value)" 
+                class="mt-2 text-xs text-green-400 hover:text-green-300">+ Add Subcategory</button>
+      </div>
+    `;
+  } else {
+    // Show existing subcategories as checkboxes
+    list.innerHTML = category.subcategories.map(sub => {
+      const isSelected = selectedSubcategories.includes(categoryId + ':' + sub);
+      return `
+        <label class="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 rounded cursor-pointer hover:bg-gray-600">
+          <input type="checkbox" 
+                 ${isSelected ? 'checked' : ''} 
+                 onchange="toggleSubcategory('${categoryId}', '${escapeHtml(sub)}', this.checked)"
+                 class="rounded">
+          <span class="text-sm text-white">${escapeHtml(sub)}</span>
+        </label>
+      `;
+    }).join('') + `
+      <div class="w-full mt-2">
+        <input type="text" 
+               id="newSubcategory_${categoryId}" 
+               class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm w-full"
+               placeholder="Add new subcategory..."
+               onkeypress="if(event.key==='Enter')addSubcategory('${categoryId}', this.value)">
+        <button onclick="addSubcategory('${categoryId}', document.getElementById('newSubcategory_${categoryId}').value)" 
+                class="mt-2 text-xs text-green-400 hover:text-green-300">+ Add New Subcategory</button>
+      </div>
+    `;
+  }
+  
+  section.classList.remove('hidden');
+}
+
+// Toggle subcategory selection
+function toggleSubcategory(categoryId, subcategory, checked) {
+  const key = categoryId + ':' + subcategory;
+  if (checked) {
+    if (!selectedSubcategories.includes(key)) {
+      selectedSubcategories.push(key);
+    }
+  } else {
+    selectedSubcategories = selectedSubcategories.filter(s => s !== key);
+  }
+  updateCategoriesInput();
+}
+
+// Add new subcategory to a category
+async function addSubcategory(categoryId, subcategoryName) {
+  if (!subcategoryName.trim()) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/categories/${categoryId}/subcategories`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ subcategory: subcategoryName.trim() })
+    });
+    
+    if (res.ok) {
+      // Reload categories and refresh display
+      await loadCategories();
+      showSubcategories(categoryId);
+      // Auto-select the new subcategory
+      toggleSubcategory(categoryId, subcategoryName.trim(), true);
+    }
+  } catch (err) {
+    console.error("Failed to add subcategory:", err);
+    alert("Failed to add subcategory");
+  }
+}
+
+// Create and select a new category
+async function createAndSelectCategory(name) {
+  try {
+    const res = await fetch(`${API_BASE}/categories`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ name: name, subcategories: [] })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      await loadCategories();
+      selectCategory(data.category._id, data.category.name);
+    } else {
+      alert(data.error || "Failed to create category");
+    }
+  } catch (err) {
+    console.error("Failed to create category:", err);
+    alert("Failed to create category");
+  }
+}
+
+// Update the hidden input with selected categories
+function updateCategoriesInput() {
+  const categoriesData = selectedCategoryIds.map(id => {
+    const subs = selectedSubcategories
+      .filter(s => s.startsWith(id + ':'))
+      .map(s => s.split(':')[1]);
+    return { id, subcategories: subs };
+  });
+  document.getElementById('prodCategories').value = JSON.stringify(categoriesData);
+}
+
+// Open category manager modal
+function openCategoryManager() {
+  renderCategoryManager();
+  document.getElementById('categoryManagerModal').classList.remove('hidden');
+  document.getElementById('categoryManagerModal').classList.add('flex');
+}
+
+function closeCategoryManager() {
+  document.getElementById('categoryManagerModal').classList.add('hidden');
+  document.getElementById('categoryManagerModal').classList.remove('flex');
+}
+
+function renderCategoryManager() {
+  const container = document.getElementById('categoryManagerList');
+  if (!allCategories.length) {
+    container.innerHTML = '<p class="text-gray-400 text-center py-4">No categories yet</p>';
+    return;
+  }
+
+  container.innerHTML = allCategories.map((cat, idx) => `
+    <div class="bg-gray-700 rounded-lg p-4 mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2 flex-1">
+          <span class="text-violet-400 font-bold text-lg">📁</span>
+          <span id="cat-name-${idx}" class="font-semibold text-white">${cat.name}</span>
+          <input id="cat-edit-${idx}" type="text" value="${cat.name}" class="hidden bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white text-sm flex-1">
+        </div>
+        <div class="flex gap-2">
+          <button onclick="toggleEditCategory(${idx})" id="cat-edit-btn-${idx}" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">Edit</button>
+          <button onclick="saveEditCategory(${idx})" id="cat-save-btn-${idx}" class="hidden bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs">Save</button>
+          <button onclick="deleteCategory(${idx})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs">Delete</button>
+        </div>
+      </div>
+      
+      <!-- Subcategories -->
+      <div class="ml-8 space-y-2">
+        ${cat.subcategories?.map((sub, subIdx) => `
+          <div class="flex items-center justify-between bg-gray-600 rounded px-3 py-2">
+            <div class="flex items-center gap-2 flex-1">
+              <span class="text-gray-400">🏷️</span>
+              <span id="sub-name-${idx}-${subIdx}" class="text-sm text-gray-200">${sub}</span>
+              <input id="sub-edit-${idx}-${subIdx}" type="text" value="${sub}" class="hidden bg-gray-500 border border-gray-400 rounded px-2 py-1 text-white text-sm flex-1">
+            </div>
+            <div class="flex gap-2">
+              <button onclick="toggleEditSubcategory(${idx}, ${subIdx})" id="sub-edit-btn-${idx}-${subIdx}" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">Edit</button>
+              <button onclick="saveEditSubcategory(${idx}, ${subIdx})" id="sub-save-btn-${idx}-${subIdx}" class="hidden bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs">Save</button>
+              <button onclick="deleteSubcategory(${idx}, ${subIdx})" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs">Delete</button>
+            </div>
+          </div>
+        `).join('') || '<p class="text-gray-500 text-sm italic">No subcategories</p>'}
+        
+        <!-- Add subcategory -->
+        <div class="flex gap-2 mt-2">
+          <input id="new-sub-${idx}" type="text" placeholder="New subcategory..." class="flex-1 bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white text-sm">
+          <button onclick="addSubcategory(${idx})" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded text-sm">Add</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleEditCategory(idx) {
+  document.getElementById(`cat-name-${idx}`).classList.add('hidden');
+  document.getElementById(`cat-edit-${idx}`).classList.remove('hidden');
+  document.getElementById(`cat-edit-btn-${idx}`).classList.add('hidden');
+  document.getElementById(`cat-save-btn-${idx}`).classList.remove('hidden');
+}
+
+async function saveEditCategory(idx) {
+  const newName = document.getElementById(`cat-edit-${idx}`).value.trim();
+  if (!newName) {
+    alert('Category name cannot be empty');
+    return;
+  }
+  
+  // Check for duplicate
+  if (allCategories.some((c, i) => i !== idx && c.name.toLowerCase() === newName.toLowerCase())) {
+    alert('Category name already exists');
+    return;
+  }
+  
+  const catId = allCategories[idx]._id;
+  console.log('Updating category:', catId, 'to name:', newName);
+  try {
+    const res = await fetch(`${API_BASE}/categories/${catId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ name: newName })
+    });
+    
+    if (res.ok) {
+      allCategories[idx].name = newName;
+      saveCategories();
+      renderCategoryManager();
+      await loadCategories();
+      alert('Category updated successfully');
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Update failed:', errorData);
+      alert('Failed to update category: ' + (errorData.error || res.statusText));
+    }
+  } catch (err) {
+    console.error('Error updating category:', err);
+    alert('Error updating category: ' + err.message);
+  }
+}
+
+async function deleteCategory(idx) {
+  if (!confirm(`Delete category "${allCategories[idx].name}"? This will also delete all its subcategories.`)) return;
+  
+  const catId = allCategories[idx]._id;
+  console.log('Deleting category:', catId);
+  try {
+    const res = await fetch(`${API_BASE}/categories/${catId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    
+    console.log('Delete response:', res.status, res.statusText);
+    
+    if (res.ok) {
+      allCategories.splice(idx, 1);
+      saveCategories();
+      renderCategoryManager();
+      await loadCategories();
+      alert('Category deleted successfully');
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Delete failed:', errorData);
+      alert('Failed to delete category: ' + (errorData.error || res.statusText));
+    }
+  } catch (err) {
+    console.error('Error deleting category:', err);
+    alert('Error deleting category: ' + err.message);
+  }
+}
+
+function toggleEditSubcategory(catIdx, subIdx) {
+  document.getElementById(`sub-name-${catIdx}-${subIdx}`).classList.add('hidden');
+  document.getElementById(`sub-edit-${catIdx}-${subIdx}`).classList.remove('hidden');
+  document.getElementById(`sub-edit-btn-${catIdx}-${subIdx}`).classList.add('hidden');
+  document.getElementById(`sub-save-btn-${catIdx}-${subIdx}`).classList.remove('hidden');
+}
+
+async function saveEditSubcategory(catIdx, subIdx) {
+  const newName = document.getElementById(`sub-edit-${catIdx}-${subIdx}`).value.trim();
+  if (!newName) {
+    alert('Subcategory name cannot be empty');
+    return;
+  }
+  
+  // Check for duplicate in same category
+  const subs = allCategories[catIdx].subcategories || [];
+  if (subs.some((s, i) => i !== subIdx && s.toLowerCase() === newName.toLowerCase())) {
+    alert('Subcategory name already exists in this category');
+    return;
+  }
+  
+  const catId = allCategories[catIdx]._id;
+  const oldSubName = allCategories[catIdx].subcategories[subIdx];
+  
+  try {
+    // Update subcategory via API (delete old, add new)
+    const res = await fetch(`${API_BASE}/categories/${catId}/subcategories/${encodeURIComponent(oldSubName)}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ subcategory: newName })
+    });
+    
+    if (res.ok) {
+      allCategories[catIdx].subcategories[subIdx] = newName;
+      saveCategories();
+      renderCategoryManager();
+      await loadCategories();
+    } else {
+      alert('Failed to update subcategory');
+    }
+  } catch (err) {
+    console.error('Error updating subcategory:', err);
+    alert('Error updating subcategory');
+  }
+}
+
+async function deleteSubcategory(catIdx, subIdx) {
+  const subName = allCategories[catIdx].subcategories[subIdx];
+  if (!confirm(`Delete subcategory "${subName}"?`)) return;
+  
+  const catId = allCategories[catIdx]._id;
+  try {
+    const res = await fetch(`${API_BASE}/categories/${catId}/subcategories/${encodeURIComponent(subName)}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    
+    if (res.ok) {
+      allCategories[catIdx].subcategories.splice(subIdx, 1);
+      saveCategories();
+      renderCategoryManager();
+      await loadCategories();
+    } else {
+      alert('Failed to delete subcategory');
+    }
+  } catch (err) {
+    console.error('Error deleting subcategory:', err);
+    alert('Error deleting subcategory');
+  }
+}
+
+async function addSubcategory(catIdx) {
+  const input = document.getElementById(`new-sub-${catIdx}`);
+  const newSub = input.value.trim();
+  if (!newSub) {
+    alert('Please enter a subcategory name');
+    return;
+  }
+  
+  // Check for duplicate
+  const subs = allCategories[catIdx].subcategories || [];
+  if (subs.some(s => s.toLowerCase() === newSub.toLowerCase())) {
+    alert('Subcategory already exists');
+    return;
+  }
+  
+  const catId = allCategories[catIdx]._id;
+  try {
+    const res = await fetch(`${API_BASE}/categories/${catId}/subcategories`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ subcategory: newSub })
+    });
+    
+    if (res.ok) {
+      if (!allCategories[catIdx].subcategories) {
+        allCategories[catIdx].subcategories = [];
+      }
+      allCategories[catIdx].subcategories.push(newSub);
+      saveCategories();
+      renderCategoryManager();
+      await loadCategories();
+    } else {
+      alert('Failed to add subcategory');
+    }
+  } catch (err) {
+    console.error('Error adding subcategory:', err);
+    alert('Error adding subcategory');
+  }
+}
+
+function saveCategories() {
+  localStorage.setItem('categories', JSON.stringify(allCategories));
+}
+
+async function addNewCategory() {
+  const input = document.getElementById('newCategoryInput');
+  const name = input.value.trim();
+  if (!name) {
+    alert('Please enter a category name');
+    return;
+  }
+  
+  // Check for duplicate
+  if (allCategories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+    alert('Category already exists');
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/categories`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ name, subcategories: [] })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      allCategories.push({ _id: data.category._id, name, subcategories: [] });
+      saveCategories();
+      input.value = '';
+      renderCategoryManager();
+      await loadCategories();
+    } else {
+      alert(data.error || 'Failed to create category');
+    }
+  } catch (err) {
+    console.error('Error creating category:', err);
+    alert('Error creating category');
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const search = document.getElementById('categorySearch');
+  const dropdown = document.getElementById('categoryDropdown');
+  if (search && dropdown && !search.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+});
+
+/* =============================================
+   PRODUCT CATEGORY EDITING (via Modal)
+   ============================================= */
+let currentEditProductId = null;
+let currentEditCategories = [];
+let selectedEditSubcategories = [];
+
+// Open category edit modal for existing product
+async function openCategoryEditModal(productId) {
+  const product = window.adminProducts?.find(p => p._id === productId);
+  if (!product) {
+    // Try to fetch from server
+    try {
+      const res = await fetch(`${API_BASE}/products`);
+      const products = await res.json();
+      window.adminProducts = products;
+      product = products.find(p => p._id === productId);
+    } catch {
+      alert('Failed to load product details');
+      return;
+    }
+  }
+  if (!product) {
+    alert('Product not found');
+    return;
+  }
+  
+  currentEditProductId = productId;
+  selectedEditSubcategories = [];
+  document.getElementById('editProductName').textContent = product.name;
+  
+  // Ensure categories are loaded
+  if (allCategories.length === 0) {
+    await loadCategories();
+  }
+  
+  // Set current categories (populate from product data)
+  currentEditCategories = product.categories || [];
+  renderCurrentCategories();
+  
+  // Show subcategories if categories exist
+  if (currentEditCategories.length > 0) {
+    showEditSubcategories(currentEditCategories[0]._id || currentEditCategories[0]);
+  }
+  
+  document.getElementById('categoryEditModal').classList.remove('hidden');
+  document.getElementById('categoryEditModal').classList.add('flex');
+}
+
+function closeCategoryEditModal() {
+  document.getElementById('categoryEditModal').classList.add('hidden');
+  document.getElementById('categoryEditModal').classList.remove('flex');
+  currentEditProductId = null;
+  currentEditCategories = [];
+  selectedEditSubcategories = [];
+  document.getElementById('editCategorySearch').value = '';
+  document.getElementById('editCategoryDropdown').classList.add('hidden');
+  document.getElementById('editSubcategorySection').classList.add('hidden');
+}
+
+function showEditSubcategories(categoryId) {
+  const category = allCategories.find(cat => cat._id.toString() === categoryId.toString());
+  if (!category) {
+    console.log("Category not found:", categoryId, allCategories);
+    return;
+  }
+  
+  const section = document.getElementById('editSubcategorySection');
+  const list = document.getElementById('editSubcategoryList');
+  
+  if (!category.subcategories || category.subcategories.length === 0) {
+    list.innerHTML = '<span class="text-gray-500 text-sm">No subcategories yet</span>';
+  } else {
+    list.innerHTML = category.subcategories.map(sub => {
+      const isSelected = selectedEditSubcategories.includes(categoryId + ':' + sub);
+      return `
+        <label class="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 rounded cursor-pointer hover:bg-gray-600">
+          <input type="checkbox" 
+                 ${isSelected ? 'checked' : ''} 
+                 onchange="toggleEditSubcategory('${categoryId}', '${sub}', this.checked)"
+                 class="rounded">
+          <span class="text-sm text-white">${sub}</span>
+        </label>
+      `;
+    }).join('');
+  }
+  
+  section.classList.remove('hidden');
+}
+
+function toggleEditSubcategory(categoryId, subcategory, checked) {
+  const key = categoryId + ':' + subcategory;
+  if (checked) {
+    if (!selectedEditSubcategories.includes(key)) {
+      selectedEditSubcategories.push(key);
+    }
+  } else {
+    selectedEditSubcategories = selectedEditSubcategories.filter(s => s !== key);
+  }
+}
+
+async function addSubcategoryToEdit() {
+  const input = document.getElementById('newSubcategoryInput');
+  const subcategoryName = input.value.trim();
+  if (!subcategoryName) return;
+  
+  if (currentEditCategories.length === 0) {
+    alert('Please add a category first');
+    return;
+  }
+  
+  // Add to the first selected category
+  const categoryId = currentEditCategories[0]._id || currentEditCategories[0];
+  
+  try {
+    const res = await fetch(`${API_BASE}/categories/${categoryId}/subcategories`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ subcategory: subcategoryName })
+    });
+    
+    if (res.ok) {
+      // Reload categories and refresh display
+      await loadCategories();
+      showEditSubcategories(categoryId);
+      // Auto-select the new subcategory
+      toggleEditSubcategory(categoryId, subcategoryName, true);
+      input.value = '';
+    }
+  } catch (err) {
+    console.error("Failed to add subcategory:", err);
+    alert("Failed to add subcategory");
+  }
+}
+
+function renderCurrentCategories() {
+  const container = document.getElementById('currentCategoriesList');
+  if (!currentEditCategories.length) {
+    container.innerHTML = '<span class="text-gray-500 text-sm">No categories assigned</span>';
+    return;
+  }
+  
+  container.innerHTML = currentEditCategories.map(cat => {
+    const catName = typeof cat === 'object' ? cat.name : cat;
+    const catId = typeof cat === 'object' ? cat._id : cat;
+    return `
+      <span class="inline-flex items-center gap-1 px-3 py-1 bg-violet-600 text-white rounded-full text-sm">
+        ${catName}
+        <button onclick="removeProductCategory('${catId}')" class="hover:text-red-200">×</button>
+      </span>
+    `;
+  }).join('');
+}
+
+function removeProductCategory(catId) {
+  currentEditCategories = currentEditCategories.filter(c => {
+    const id = typeof c === 'object' ? c._id : c;
+    return id !== catId;
+  });
+  renderCurrentCategories();
+}
+
+function searchEditCategories(query) {
+  const dropdown = document.getElementById('editCategoryDropdown');
+  if (!query.trim()) {
+    dropdown.classList.add('hidden');
+    return;
+  }
+  
+  const existingIds = currentEditCategories.map(c => typeof c === 'object' ? c._id : c);
+  const filtered = allCategories.filter(cat => 
+    cat.name.toLowerCase().includes(query.toLowerCase()) &&
+    !existingIds.includes(cat._id)
+  );
+  
+  const exactMatch = allCategories.find(cat => cat.name.toLowerCase() === query.toLowerCase());
+  
+  let html = filtered.map(cat => `
+    <div class="p-3 hover:bg-gray-700 cursor-pointer" onclick="addCategoryToProduct('${cat._id}', '${cat.name}')">
+      ${cat.name}
+    </div>
+  `).join('');
+  
+  if (!exactMatch && query.trim()) {
+    html += `
+      <div class="p-3 hover:bg-gray-700 cursor-pointer border-t border-gray-600" onclick="createAndAddCategory('${query.trim()}')">
+        <span class="text-green-400">+ Create "${query.trim()}"</span>
+      </div>
+    `;
+  }
+  
+  dropdown.innerHTML = html || '<div class="p-3 text-gray-500">No categories found</div>';
+  dropdown.classList.remove('hidden');
+}
+
+function addCategoryToProduct(catId, catName) {
+  if (!currentEditCategories.find(c => (typeof c === 'object' ? c._id : c) === catId)) {
+    currentEditCategories.push({ _id: catId, name: catName });
+    renderCurrentCategories();
+    // Show subcategories for the newly added category
+    showEditSubcategories(catId);
+  }
+  document.getElementById('editCategorySearch').value = '';
+  document.getElementById('editCategoryDropdown').classList.add('hidden');
+}
+
+async function createAndAddCategory(name) {
+  try {
+    const res = await fetch(`${API_BASE}/categories`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ name, subcategories: [] })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      allCategories.push(data.category);
+      addCategoryToProduct(data.category._id, data.category.name);
+    } else {
+      alert(data.error || 'Failed to create category');
+    }
+  } catch {
+    alert('Failed to create category');
+  }
+}
+
+async function saveProductCategories() {
+  if (!currentEditProductId) {
+    console.error("No product ID set");
+    return;
+  }
+  
+  // Extract just the category IDs (strings)
+  const categoryIds = currentEditCategories.map(c => {
+    const id = typeof c === 'object' ? c._id : c;
+    return id.toString();
+  });
+  
+  // Build selectedSubcategories array (format: "CategoryName:SubcategoryName")
+  const selectedSubcategories = selectedEditSubcategories.map(key => {
+    const [catId, subName] = key.split(':');
+    const cat = allCategories.find(c => c._id.toString() === catId);
+    return cat ? `${cat.name}:${subName}` : key;
+  });
+  
+  console.log("Saving for product", currentEditProductId, { categoryIds, selectedSubcategories });
+  
+  try {
+    const res = await fetch(`${API_BASE}/products/${currentEditProductId}/categories`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ categories: categoryIds, selectedSubcategories })
+    });
+    
+    console.log("Response status:", res.status);
+    
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Success:", data);
+      await loadAdminProducts();
+      closeCategoryEditModal();
+      alert('Categories updated successfully!');
+    } else {
+      const error = await res.json();
+      console.error("Failed:", error);
+      alert('Failed to update categories: ' + (error.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error("Network/JS error:", err);
+    alert('Failed to update categories - check console for details');
+  }
+}
+
+// Close edit dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const search = document.getElementById('editCategorySearch');
+  const dropdown = document.getElementById('editCategoryDropdown');
+  if (search && dropdown && !search.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+});
+
+/* =============================================
+   ADD PRODUCT — extra detail helpers
+   ============================================= */
+let addHighlights = [];
+let addSpecs = [];
+
+function toggleAddProductDetails() {
+  const panel = document.getElementById('addProductDetails');
+  const label = document.getElementById('addDetailsToggleLabel');
+  const hidden = panel.classList.toggle('hidden');
+  label.textContent = hidden
+    ? '▶ Add more details (description, specs, stock…)'
+    : '▼ Hide extra details';
+}
+
+function addNewHighlight() {
+  const inp = document.getElementById('addHighlightInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  addHighlights.push(val);
+  inp.value = '';
+  renderAddHighlights();
+}
+function renderAddHighlights() {
+  const el = document.getElementById('addHighlightsList');
+  el.innerHTML = addHighlights.length
+    ? addHighlights.map((h, i) => `<div class="flex gap-2 items-center"><span class="text-green-400">•</span><span class="flex-1 text-white text-xs">${escapeHtml(h)}</span><button onclick="addHighlights.splice(${i},1);renderAddHighlights()" class="text-red-400 text-xs">✕</button></div>`).join('')
+    : 'None added';
+}
+
+function addNewSpec() {
+  const key   = document.getElementById('addSpecKey').value.trim();
+  const value = document.getElementById('addSpecValue').value.trim();
+  if (!key || !value) return;
+  addSpecs.push({ key, value });
+  document.getElementById('addSpecKey').value = '';
+  document.getElementById('addSpecValue').value = '';
+  renderAddSpecs();
+}
+function renderAddSpecs() {
+  const el = document.getElementById('addSpecsList');
+  el.innerHTML = addSpecs.length
+    ? addSpecs.map((s, i) => `<div class="flex gap-2 items-center"><span class="text-violet-300 text-xs font-bold w-24 shrink-0">${escapeHtml(s.key)}</span><span class="flex-1 text-white text-xs">${escapeHtml(s.value)}</span><button onclick="addSpecs.splice(${i},1);renderAddSpecs()" class="text-red-400 text-xs">✕</button></div>`).join('')
+    : 'None added';
+}
+
+/* =============================================
+   ADD FEATURED — extra detail helpers
+   ============================================= */
+let addFeatHighlights = [];
+let addFeatSpecs = [];
+
+function toggleAddFeaturedDetails() {
+  const panel = document.getElementById('addFeaturedDetails');
+  const label = document.getElementById('addFeatDetailsToggleLabel');
+  const hidden = panel.classList.toggle('hidden');
+  label.textContent = hidden
+    ? '▶ Add more details (description, specs, stock…)'
+    : '▼ Hide extra details';
+}
+
+function addFeatHighlight() {
+  const inp = document.getElementById('addFeatHighlightInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  addFeatHighlights.push(val);
+  inp.value = '';
+  renderAddFeatHighlights();
+}
+function renderAddFeatHighlights() {
+  const el = document.getElementById('addFeatHighlightsList');
+  el.innerHTML = addFeatHighlights.length
+    ? addFeatHighlights.map((h, i) => `<div class="flex gap-2 items-center"><span class="text-violet-400">•</span><span class="flex-1 text-white text-xs">${escapeHtml(h)}</span><button onclick="addFeatHighlights.splice(${i},1);renderAddFeatHighlights()" class="text-red-400 text-xs">✕</button></div>`).join('')
+    : 'None added';
+}
+
+function addFeatSpec() {
+  const key   = document.getElementById('addFeatSpecKey').value.trim();
+  const value = document.getElementById('addFeatSpecValue').value.trim();
+  if (!key || !value) return;
+  addFeatSpecs.push({ key, value });
+  document.getElementById('addFeatSpecKey').value = '';
+  document.getElementById('addFeatSpecValue').value = '';
+  renderAddFeatSpecs();
+}
+function renderAddFeatSpecs() {
+  const el = document.getElementById('addFeatSpecsList');
+  el.innerHTML = addFeatSpecs.length
+    ? addFeatSpecs.map((s, i) => `<div class="flex gap-2 items-center"><span class="text-violet-300 text-xs font-bold w-24 shrink-0">${escapeHtml(s.key)}</span><span class="flex-1 text-white text-xs">${escapeHtml(s.value)}</span><button onclick="addFeatSpecs.splice(${i},1);renderAddFeatSpecs()" class="text-red-400 text-xs">✕</button></div>`).join('')
+    : 'None added';
+}
+
+/* ADD PRODUCT */
+async function addProduct(name, brand, price, image, originalPrice, discount, categories, extraFields) {
+  const body = { name, brand, price, image, ...extraFields };
+  if (originalPrice) body.originalPrice = originalPrice;
+  if (discount) body.discount = discount;
+  if (categories) body.categories = categories;
+  const res = await fetch(`${API_BASE}/products`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  return data.success;
+}
+
+/* LOAD COMPLAINTS */
+async function loadComplaints() {
+  const container = document.getElementById("complaintsList");
+  try {
+    const res = await fetch(`${API_BASE}/complaints`, {
+      headers: getAuthHeaders()
+    });
+    const complaints = await res.json();
+
+    if (!complaints.length) {
+      container.innerHTML = `<p class="text-green-400 text-center py-12"> No complaints</p>`;
+      return;
+    }
+
+    container.innerHTML = complaints.map(c => `
+      <div class="border-b border-gray-700 p-6 last:border-b-0 hover:bg-gray-700/50 transition">
+        <div class="flex justify-between items-start gap-4">
+          <div class="flex-1">
+            <p class="font-bold text-white">${escapeHtml(c.email)}</p>
+            <p class="text-gray-300 mt-2">${escapeHtml(c.message)}</p>
+            <p class="text-xs text-gray-500 mt-3">${new Date(c.createdAt).toLocaleString()}</p>
+            <p class="text-xs font-semibold mt-2 ${c.resolved ? 'text-green-400' : 'text-yellow-400'}">
+              ${c.resolved ? ' Resolved' : ' Pending'}
+            </p>
+          </div>
+          <div class="flex flex-col gap-2">
+            ${!c.resolved ? `<button class="resolve-btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm transition" data-id="${c._id}">Resolve</button>` : ''}
+            <button class="delete-complaint-btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition" data-id="${c._id}">Delete</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+        document.querySelectorAll(".resolve-btn").forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm("Resolve and delete this complaint?")) return;
+        const res = await fetch(`${API_BASE}/complaints/${btn.dataset.id}`, { method: "DELETE", headers: getAuthHeaders() });
+        if (res.ok) loadComplaints();
+        else alert("Failed to resolve complaint");
+      };
+    });
+
+    document.querySelectorAll(".delete-complaint-btn").forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm("Delete complaint?")) return;
+        const res = await fetch(`${API_BASE}/complaints/${btn.dataset.id}`, { method: "DELETE", headers: getAuthHeaders() });
+        if (res.ok) loadComplaints();
+        else alert("Delete failed");
+      };
+    });
+  } catch {
+    container.innerHTML = `<p class="text-red-400 text-center py-8">Failed loading complaints</p>`;
+  }
+}
+
+/* LOAD ORDERS */
+async function loadOrders() {
+  const container = document.getElementById("ordersList");
+  try {
+    const res = await fetch(`${API_BASE}/orders`, {
+      headers: getAuthHeaders()
+    });
+    const orders = await res.json();
+
+    if (!orders.length) {
+      container.innerHTML = `<p class="text-gray-400 text-center py-12">📭 No orders yet</p>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(o => `
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-blue-500 transition">
+        <div class="flex justify-between items-start gap-4 mb-4">
+          <div class="flex-1">
+            <p class="font-bold text-white text-lg">Order #${o._id.substring(0, 8).toUpperCase()}</p>
+            <p class="text-sm text-gray-400 mt-1">Customer: ${escapeHtml(o.user?.email || 'N/A')}</p>
+            <p class="text-sm text-gray-400">Date: ${new Date(o.createdAt).toLocaleString()}</p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-sm font-semibold ${o.status === 'Delivered' ? 'bg-green-600 text-white' : o.status === 'Shipped' ? 'bg-blue-600 text-white' : o.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white'}">
+            ${escapeHtml(o.status)}
+          </span>
+        </div>
+        
+        ${o.recipient ? `
+        <div class="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-violet-900/30 border border-violet-700/50">
+          <span class="text-violet-400 text-sm font-bold">🎁 Gift Order</span>
+          <span class="text-xs text-violet-300">Delivering to: <strong>${escapeHtml(o.recipient.name)}</strong> · ${escapeHtml(o.recipient.phone)} · ${escapeHtml(o.recipient.address + ', ' + o.recipient.city + ', ' + o.recipient.state + ' - ' + o.recipient.pin)}</span>
+        </div>` : ''}
+
+        <div class="bg-gray-700/50 rounded p-4 mb-4">
+          <p class="text-sm text-gray-300 mb-2"><strong>Items:</strong></p>
+          ${o.items && o.items.length ? o.items.map(item => `
+            <p class="text-xs text-gray-400 ml-2">• ${escapeHtml(item.name)} x${item.quantity} - ₹${Number(item.price * item.quantity).toLocaleString()}</p>
+          `).join('') : '<p class="text-xs text-gray-500 ml-2">No items</p>'}
+          
+          <div class="border-t border-gray-600 mt-3 pt-3 text-sm">
+            <p class="text-gray-300">Subtotal: ₹${Number(o.subtotal || 0).toLocaleString()}</p>
+            ${o.discount ? `<p class="text-green-400">Discount: -₹${Number(o.discount).toLocaleString()}${o.promoCode ? ` <span class="ml-1 px-2 py-0.5 rounded-full bg-green-900/60 border border-green-700 text-green-300 text-xs font-mono">🏷 ${escapeHtml(o.promoCode)}</span>` : ''}</p>` : ''}
+            ${o.gst ? `<p class="text-gray-300">GST: ₹${Number(o.gst).toLocaleString()}</p>` : ''}
+            <p class="text-lg font-bold text-white mt-2">Total: ₹${Number(o.total || 0).toLocaleString()}</p>
+            <p class="text-xs text-gray-400 mt-1">Payment: ${escapeHtml(o.paymentMethod || 'N/A')}</p>
+            ${o.location ? '<p class="text-xs text-gray-400 mt-1">📍 ' + escapeHtml(o.location) + '</p>' : ''}
+            ${o.contactNumber ? '<p class="text-xs text-gray-400 mt-1">📞 ' + escapeHtml(o.contactNumber) + '</p>' : ''}
+          </div>
+        </div>
+
+        <div class="flex gap-2 flex-wrap">
+          <select class="status-select bg-gray-700 text-white px-3 py-2 rounded text-sm cursor-pointer" data-id="${o._id}" value="${o.status}">
+            <option value="Placed">Placed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <button class="delete-order-btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition" data-id="${o._id}">🗑️ Delete</button>
+        </div>
+      </div>
+    `).join("");
+
+    document.querySelectorAll(".status-select").forEach(select => {
+      select.onchange = async () => {
+        console.log("Updating order", select.dataset.id, "to status:", select.value);
+        const res = await fetch(`${API_BASE}/orders/${select.dataset.id}/status`, {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ status: select.value })
+        });
+        const data = await res.json();
+        console.log("Update response:", data);
+        if (res.ok) {
+          alert("✅ Order status updated to " + select.value);
+          loadOrders();
+        } else {
+          alert("Failed to update order status: " + (data.error || "Unknown error"));
+          loadOrders();
+        }
+      };
+    });
+
+    document.querySelectorAll(".delete-order-btn").forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm("Delete this order?")) return;
+        const res = await fetch(`${API_BASE}/orders/${btn.dataset.id}`, {
+          method: "DELETE",
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          alert("Order deleted");
+          loadOrders();
+        } else {
+          alert("Failed to delete order");
+        }
+      };
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<p class="text-red-400 text-center py-8">Failed loading orders</p>`;
+  }
+}
+
+/* BUTTON EVENTS */
+document.getElementById('addProductBtn').onclick = async () => {
+  const name = document.getElementById('prodName').value.trim();
+  const brand = document.getElementById('prodBrand').value.trim();
+  const price = parseFloat(document.getElementById('prodPrice').value);
+  const image = document.getElementById('prodImage').value.trim();
+  const originalPrice = parseFloat(document.getElementById('prodOriginalPrice').value) || undefined;
+  const discount = parseFloat(document.getElementById('prodDiscount').value) || undefined;
+  const categoriesJson = document.getElementById('prodCategories').value;
+  const categories = categoriesJson ? JSON.parse(categoriesJson).map(c => c.id) : [];
+
+  // Extra fields
+  const sku          = document.getElementById('prodSku')?.value.trim()          || '';
+  const stock        = parseInt(document.getElementById('prodStock')?.value)      || 0;
+  const tagsRaw      = document.getElementById('prodTags')?.value                || '';
+  const tags         = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+  const description  = document.getElementById('prodDescription')?.value.trim()  || '';
+  const warranty     = document.getElementById('prodWarranty')?.value.trim()     || '';
+  const returnPolicy = document.getElementById('prodReturnPolicy')?.value.trim() || '';
+  const imagesRaw    = document.getElementById('prodImages')?.value              || '';
+  const images       = imagesRaw.split('\n').map(l => l.trim()).filter(Boolean);
+
+  if (!name || !brand || isNaN(price) || !image) {
+    alert('Please fill all required fields');
+    return;
+  }
+
+  const ok = await addProduct(name, brand, price, image, originalPrice, discount, categories, {
+    sku, stock, tags, description, warranty, returnPolicy, images,
+    highlights: addHighlights,
+    specifications: addSpecs
+  });
+
+  if (ok) {
+    // Reset core fields
+    document.getElementById('prodName').value = '';
+    document.getElementById('prodBrand').value = '';
+    document.getElementById('prodPrice').value = '';
+    document.getElementById('prodImage').value = '';
+    document.getElementById('prodOriginalPrice').value = '';
+    document.getElementById('prodDiscount').value = '';
+    // Reset categories
+    selectedCategoryIds = [];
+    selectedSubcategories = [];
+    document.getElementById('prodCategories').value = '[]';
+    document.getElementById('selectedCategories').innerHTML = '';
+    document.getElementById('subcategorySection').classList.add('hidden');
+    // Reset extra fields
+    if (document.getElementById('prodSku'))          document.getElementById('prodSku').value = '';
+    if (document.getElementById('prodStock'))        document.getElementById('prodStock').value = '';
+    if (document.getElementById('prodTags'))         document.getElementById('prodTags').value = '';
+    if (document.getElementById('prodDescription'))  document.getElementById('prodDescription').value = '';
+    if (document.getElementById('prodWarranty'))     document.getElementById('prodWarranty').value = '';
+    if (document.getElementById('prodReturnPolicy')) document.getElementById('prodReturnPolicy').value = '';
+    if (document.getElementById('prodImages'))       document.getElementById('prodImages').value = '';
+    addHighlights = [];
+    addSpecs = [];
+    renderAddHighlights();
+    renderAddSpecs();
+    alert('Product added successfully');
+    loadAdminProducts();
+  } else {
+    alert('Failed to add product');
+  }
+};
+
+/* LOAD FEATURED PRODUCTS */
+async function loadAdminFeatured() {
+  const container = document.getElementById('adminFeaturedGrid');
+  try {
+    const res = await fetch(`${API_BASE}/featured-products`);
+    const products = await res.json();
+
+    if (!products.length) {
+      container.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">No featured products yet</p>';
+      return;
+    }
+
+    // Store featured products for the edit modal
+    window.adminFeatured = products;
+
+    container.innerHTML = products.map(p => `
+      <div class="bg-gray-700 border border-gray-600 rounded-lg p-4 hover:border-violet-500 transition">
+        <div class="w-full h-40 rounded mb-3 bg-gray-800 flex items-center justify-center overflow-hidden">
+          <img src="${p.image || ''}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="hidden w-full h-full flex-col items-center justify-center text-gray-500">
+            <span class="text-xs">No Image</span>
+          </div>
+        </div>
+        <p class="font-bold text-white">${escapeHtml(p.name)}</p>
+        <p class="text-sm text-gray-400">${escapeHtml(p.brand || 'N/A')}</p>
+        ${p.categories?.length ? `<div class="flex flex-wrap gap-1 mt-1">${p.categories.map(c => { const cat = typeof c === 'object' ? c : {name: c}; const selectedSubs = p.selectedSubcategories || []; const catSubs = selectedSubs.filter(s => s.startsWith(cat.name + ':')); return `<span class="text-[10px] px-2 py-0.5 bg-violet-500/30 text-violet-300 rounded">${cat.name}${catSubs.length ? ': ' + catSubs.map(s => s.split(':')[1]).join(', ') : ''}</span>`; }).join('')}</div>` : '<p class="text-xs text-gray-500 mt-1">No categories</p>'}
+        ${p.originalPrice ? `<p class="text-sm text-gray-500 line-through">₹${Number(p.originalPrice).toLocaleString()}</p>` : ''}
+        <p class="text-violet-400 font-bold mt-1">₹${Number(p.price).toLocaleString()}</p>
+        ${p.discount ? `<span class="text-xs bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded">${p.discount}% OFF</span>` : ''}
+        <div class="flex gap-2 mt-3">
+          <button class="edit-featured-btn flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded text-xs transition" data-id="${p._id}">
+            ✏️ Edit
+          </button>
+          <button class="edit-feat-cat-btn flex-1 bg-violet-600 hover:bg-violet-700 text-white px-2 py-2 rounded text-xs transition" data-id="${p._id}">
+            🏷️ Categories
+          </button>
+          <button class="delete-featured-btn flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-2 rounded text-xs transition" data-id="${p._id}">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.delete-featured-btn').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Remove from featured?')) return;
+        const res = await fetch(`${API_BASE}/featured-products/${btn.dataset.id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        if (res.ok) loadAdminFeatured();
+        else alert('Delete failed');
+      };
+    });
+
+    document.querySelectorAll('.edit-featured-btn').forEach(btn => {
+      btn.onclick = async () => {
+        await openFeaturedProductEditModal(btn.dataset.id);
+      };
+    });
+
+    document.querySelectorAll('.edit-feat-cat-btn').forEach(btn => {
+      btn.onclick = async () => {
+        await openFeaturedCategoryEditModal(btn.dataset.id);
+      };
+    });
+  } catch {
+    container.innerHTML = '<p class="text-red-400 col-span-full text-center py-8">Failed loading featured products</p>';
+  }
+}
+
+document.getElementById('addFeaturedBtn').onclick = async () => {
+  const name          = document.getElementById('featName').value.trim();
+  const brand         = document.getElementById('featBrand').value.trim();
+  const price         = parseFloat(document.getElementById('featPrice').value);
+  const image         = document.getElementById('featImage').value.trim();
+  const originalPrice = parseFloat(document.getElementById('featOriginalPrice').value) || undefined;
+  const discount      = parseFloat(document.getElementById('featDiscount').value) || undefined;
+  const categoriesJson = document.getElementById('featCategories').value;
+  const categories    = categoriesJson ? JSON.parse(categoriesJson).map(c => c.id) : [];
+
+  // Extra fields
+  const sku          = document.getElementById('featSku')?.value.trim()          || '';
+  const stock        = parseInt(document.getElementById('featStock')?.value)      || 0;
+  const tagsRaw      = document.getElementById('featTags')?.value                || '';
+  const tags         = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+  const description  = document.getElementById('featDescription')?.value.trim()  || '';
+  const warranty     = document.getElementById('featWarranty')?.value.trim()     || '';
+  const returnPolicy = document.getElementById('featReturnPolicy')?.value.trim() || '';
+  const imagesRaw    = document.getElementById('featImages')?.value              || '';
+  const images       = imagesRaw.split('\n').map(l => l.trim()).filter(Boolean);
+
+  if (!name || !brand || isNaN(price) || !image) {
+    alert('Please fill all fields');
+    return;
+  }
+
+  const body = { name, brand, price, image, sku, stock, tags, description, warranty, returnPolicy, images,
+    highlights: addFeatHighlights, specifications: addFeatSpecs };
+  if (originalPrice) body.originalPrice = originalPrice;
+  if (discount)      body.discount      = discount;
+  if (categories.length) body.categories = categories;
+
+  const res = await fetch(`${API_BASE}/featured-products`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    document.getElementById('featName').value          = '';
+    document.getElementById('featBrand').value         = '';
+    document.getElementById('featPrice').value         = '';
+    document.getElementById('featImage').value         = '';
+    document.getElementById('featOriginalPrice').value = '';
+    document.getElementById('featDiscount').value      = '';
+    featResetCategories();
+    // Reset extra fields
+    if (document.getElementById('featSku'))          document.getElementById('featSku').value = '';
+    if (document.getElementById('featStock'))        document.getElementById('featStock').value = '';
+    if (document.getElementById('featTags'))         document.getElementById('featTags').value = '';
+    if (document.getElementById('featDescription'))  document.getElementById('featDescription').value = '';
+    if (document.getElementById('featWarranty'))     document.getElementById('featWarranty').value = '';
+    if (document.getElementById('featReturnPolicy')) document.getElementById('featReturnPolicy').value = '';
+    if (document.getElementById('featImages'))       document.getElementById('featImages').value = '';
+    addFeatHighlights = [];
+    addFeatSpecs = [];
+    renderAddFeatHighlights();
+    renderAddFeatSpecs();
+    alert('Featured product added');
+    loadAdminFeatured();
+  } else {
+    alert('Failed to add featured product');
+  }
+};
+
+// Admin Login
+async function loginAdmin() {
+  const email = document.getElementById("adminUser").value;
+  const password = document.getElementById("adminPass").value;
+
+  try {
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      localStorage.setItem("adminToken", data.token);
+
+      document.getElementById("loginOverlay").style.display = "none";
+      document.getElementById("loginError").classList.add("hidden");
+
+      loadAdminProducts();
+      loadAdminFeatured();
+      loadCategories();
+      loadComplaints();
+      loadOrders();
+
+      setInterval(loadComplaints, 10000);
+      setInterval(loadOrders, 15000);
+    } else {
+      document.getElementById("loginError").classList.remove("hidden");
+      document.getElementById("loginError").textContent = data.message || "Invalid credentials";
+    }
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("loginError").classList.remove("hidden");
+    document.getElementById("loginError").textContent = "Server error. Please try again.";
+  }
+}
+
+/* =============================================
+   AUTO-CALC: PRODUCTS TAB
+   MSRP = prodOriginalPrice | Sell = prodPrice | Disc = prodDiscount
+   ============================================= */
+function prodCalcFromMsrp() {
+  // When MSRP changes, recalculate sell price from current discount (if any)
+  const msrp     = parseFloat(document.getElementById('prodOriginalPrice').value);
+  const discount = parseFloat(document.getElementById('prodDiscount').value);
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    const sell = +(msrp * (1 - discount / 100)).toFixed(2);
+    document.getElementById('prodPrice').value = sell > 0 ? sell : 0;
+  }
+}
+
+function prodCalcFromSellPrice() {
+  const msrp = parseFloat(document.getElementById('prodOriginalPrice').value);
+  const sell = parseFloat(document.getElementById('prodPrice').value);
+  if (!isNaN(msrp) && !isNaN(sell) && msrp > 0) {
+    if (sell > msrp) {
+      // Sell price exceeds MSRP — raise MSRP to match, clear discount
+      document.getElementById('prodOriginalPrice').value = sell;
+      document.getElementById('prodDiscount').value      = '';
+    } else {
+      const disc = +(((msrp - sell) / msrp) * 100).toFixed(2);
+      document.getElementById('prodDiscount').value = disc >= 0 ? disc : 0;
+    }
+  }
+}
+
+function prodCalcFromDiscount() {
+  const msrp     = parseFloat(document.getElementById('prodOriginalPrice').value);
+  let   discount = parseFloat(document.getElementById('prodDiscount').value);
+  if (discount < 0) { discount = 0; document.getElementById('prodDiscount').value = 0; }
+  if (discount > 100) { discount = 100; document.getElementById('prodDiscount').value = 100; }
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    const sell = +(msrp * (1 - discount / 100)).toFixed(2);
+    document.getElementById('prodPrice').value = sell > 0 ? sell : 0;
+  }
+}
+
+/* =============================================
+   FEATURED TAB — CATEGORY PICKER
+   ============================================= */
+let featSelectedCategoryIds = [];
+let featSelectedSubcategories = [];
+
+function featSearchCategories(query) {
+  const dropdown = document.getElementById('featCategoryDropdown');
+  if (!query.trim()) { featShowCategoryDropdown(); return; }
+
+  const filtered = allCategories.filter(cat =>
+    cat.name.toLowerCase().includes(query.toLowerCase()) &&
+    !featSelectedCategoryIds.includes(cat._id)
+  );
+  const exactMatch = allCategories.find(cat => cat.name.toLowerCase() === query.toLowerCase());
+
+  let html = filtered.map(cat => `
+    <div class="p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-0"
+         onclick="featSelectCategory('${cat._id}', '${escapeHtml(cat.name)}')">
+      <span class="text-white">${escapeHtml(cat.name)}</span>
+      ${cat.subcategories?.length ? `<span class="text-gray-500 text-xs ml-2">(${cat.subcategories.length} subcategories)</span>` : ''}
+    </div>
+  `).join('');
+
+  if (!exactMatch && query.trim()) {
+    html += `
+      <div class="p-3 hover:bg-gray-700 cursor-pointer border-t border-gray-600"
+           onclick="featCreateAndSelectCategory('${escapeHtml(query.trim())}')">
+        <span class="text-violet-400">+ Create "${escapeHtml(query.trim())}"</span>
+      </div>`;
+  }
+
+  dropdown.innerHTML = html || '<div class="p-3 text-gray-500">No categories found</div>';
+  dropdown.classList.remove('hidden');
+}
+
+function featShowCategoryDropdown() {
+  const dropdown = document.getElementById('featCategoryDropdown');
+  const available = allCategories.filter(cat => !featSelectedCategoryIds.includes(cat._id));
+  let html = available.map(cat => `
+    <div class="p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-0"
+         onclick="featSelectCategory('${cat._id}', '${escapeHtml(cat.name)}')">
+      <span class="text-white">${escapeHtml(cat.name)}</span>
+      ${cat.subcategories?.length ? `<span class="text-gray-500 text-xs ml-2">(${cat.subcategories.length} subcategories)</span>` : ''}
+    </div>
+  `).join('');
+  if (!available.length) html = '<div class="p-3 text-gray-500">No more categories available</div>';
+  dropdown.innerHTML = html;
+  dropdown.classList.remove('hidden');
+}
+
+function featSelectCategory(id, name) {
+  if (featSelectedCategoryIds.includes(id)) return;
+  featSelectedCategoryIds.push(id);
+  featUpdateSelectedDisplay();
+  document.getElementById('featCategorySearch').value = '';
+  document.getElementById('featCategoryDropdown').classList.add('hidden');
+  featShowSubcategories(id);
+  featUpdateCategoriesInput();
+}
+
+function featRemoveCategory(id) {
+  featSelectedCategoryIds = featSelectedCategoryIds.filter(cid => cid !== id);
+  featSelectedSubcategories = featSelectedSubcategories.filter(s => !s.startsWith(id + ':'));
+  featUpdateSelectedDisplay();
+  featUpdateCategoriesInput();
+  if (!featSelectedCategoryIds.length) {
+    document.getElementById('featSubcategorySection').classList.add('hidden');
+  } else {
+    featShowSubcategories(featSelectedCategoryIds[featSelectedCategoryIds.length - 1]);
+  }
+}
+
+function featUpdateSelectedDisplay() {
+  const container = document.getElementById('featSelectedCategories');
+  const selected = allCategories.filter(cat => featSelectedCategoryIds.includes(cat._id));
+  container.innerHTML = selected.map(cat => `
+    <span class="inline-flex items-center gap-1 px-3 py-1 bg-violet-600 text-white rounded-full text-sm">
+      ${escapeHtml(cat.name)}
+      <button onclick="featRemoveCategory('${cat._id}')" class="hover:text-red-200">×</button>
+    </span>
+  `).join('');
+}
+
+function featShowSubcategories(categoryId) {
+  const category = allCategories.find(cat => cat._id === categoryId);
+  if (!category) return;
+  const section = document.getElementById('featSubcategorySection');
+  const list = document.getElementById('featSubcategoryList');
+
+  if (!category.subcategories || !category.subcategories.length) {
+    list.innerHTML = `
+      <div class="w-full">
+        <input type="text" id="featNewSub_${categoryId}"
+               class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm w-full"
+               placeholder="Add subcategory for ${escapeHtml(category.name)}..."
+               onkeypress="if(event.key==='Enter')featAddSubcategory('${categoryId}',this.value)">
+        <button onclick="featAddSubcategory('${categoryId}',document.getElementById('featNewSub_${categoryId}').value)"
+                class="mt-2 text-xs text-violet-400 hover:text-violet-300">+ Add Subcategory</button>
+      </div>`;
+  } else {
+    list.innerHTML = category.subcategories.map(sub => {
+      const isSelected = featSelectedSubcategories.includes(categoryId + ':' + sub);
+      return `
+        <label class="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 rounded cursor-pointer hover:bg-gray-600">
+          <input type="checkbox" ${isSelected ? 'checked' : ''}
+                 onchange="featToggleSubcategory('${categoryId}','${escapeHtml(sub)}',this.checked)" class="rounded">
+          <span class="text-sm text-white">${escapeHtml(sub)}</span>
+        </label>`;
+    }).join('') + `
+      <div class="w-full mt-2">
+        <input type="text" id="featNewSub_${categoryId}"
+               class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm w-full"
+               placeholder="Add new subcategory..."
+               onkeypress="if(event.key==='Enter')featAddSubcategory('${categoryId}',this.value)">
+        <button onclick="featAddSubcategory('${categoryId}',document.getElementById('featNewSub_${categoryId}').value)"
+                class="mt-2 text-xs text-violet-400 hover:text-violet-300">+ Add New Subcategory</button>
+      </div>`;
+  }
+  section.classList.remove('hidden');
+}
+
+function featToggleSubcategory(categoryId, subcategory, checked) {
+  const key = categoryId + ':' + subcategory;
+  if (checked) { if (!featSelectedSubcategories.includes(key)) featSelectedSubcategories.push(key); }
+  else { featSelectedSubcategories = featSelectedSubcategories.filter(s => s !== key); }
+  featUpdateCategoriesInput();
+}
+
+async function featAddSubcategory(categoryId, subcategoryName) {
+  if (!subcategoryName.trim()) return;
+  try {
+    const res = await fetch(`${API_BASE}/categories/${categoryId}/subcategories`, {
+      method: 'POST', headers: getAuthHeaders(),
+      body: JSON.stringify({ subcategory: subcategoryName.trim() })
+    });
+    if (res.ok) { await loadCategories(); featShowSubcategories(categoryId); featToggleSubcategory(categoryId, subcategoryName.trim(), true); }
+  } catch { alert('Failed to add subcategory'); }
+}
+
+async function featCreateAndSelectCategory(name) {
+  try {
+    const res = await fetch(`${API_BASE}/categories`, {
+      method: 'POST', headers: getAuthHeaders(),
+      body: JSON.stringify({ name, subcategories: [] })
+    });
+    const data = await res.json();
+    if (data.success) { allCategories.push(data.category); featSelectCategory(data.category._id, data.category.name); }
+    else alert(data.error || 'Failed to create category');
+  } catch { alert('Failed to create category'); }
+}
+
+function featUpdateCategoriesInput() {
+  const categoriesData = featSelectedCategoryIds.map(id => {
+    const subs = featSelectedSubcategories.filter(s => s.startsWith(id + ':')).map(s => s.split(':')[1]);
+    return { id, subcategories: subs };
+  });
+  document.getElementById('featCategories').value = JSON.stringify(categoriesData);
+}
+
+function featResetCategories() {
+  featSelectedCategoryIds = [];
+  featSelectedSubcategories = [];
+  document.getElementById('featCategories').value = '[]';
+  document.getElementById('featSelectedCategories').innerHTML = '';
+  document.getElementById('featSubcategorySection').classList.add('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  const search = document.getElementById('featCategorySearch');
+  const dropdown = document.getElementById('featCategoryDropdown');
+  if (search && dropdown && !search.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+});
+
+/* =============================================
+   AUTO-CALC: FEATURED TAB
+   MSRP = featOriginalPrice | Sell = featPrice | Disc = featDiscount
+   ============================================= */
+function featCalcFromMsrp() {
+  const msrp     = parseFloat(document.getElementById('featOriginalPrice').value);
+  const discount = parseFloat(document.getElementById('featDiscount').value);
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    const sell = +(msrp * (1 - discount / 100)).toFixed(2);
+    document.getElementById('featPrice').value = sell > 0 ? sell : 0;
+  }
+}
+
+function featCalcFromSellPrice() {
+  const msrp = parseFloat(document.getElementById('featOriginalPrice').value);
+  const sell = parseFloat(document.getElementById('featPrice').value);
+  if (!isNaN(msrp) && !isNaN(sell) && msrp > 0) {
+    if (sell > msrp) {
+      // Sell price exceeds MSRP — raise MSRP, clear discount
+      document.getElementById('featOriginalPrice').value = sell;
+      document.getElementById('featDiscount').value      = '';
+    } else {
+      const disc = +(((msrp - sell) / msrp) * 100).toFixed(2);
+      document.getElementById('featDiscount').value = disc >= 0 ? disc : 0;
+    }
+  }
+}
+
+function featCalcFromDiscount() {
+  const msrp     = parseFloat(document.getElementById('featOriginalPrice').value);
+  let   discount = parseFloat(document.getElementById('featDiscount').value);
+  if (discount < 0) { discount = 0; document.getElementById('featDiscount').value = 0; }
+  if (discount > 100) { discount = 100; document.getElementById('featDiscount').value = 100; }
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    const sell = +(msrp * (1 - discount / 100)).toFixed(2);
+    document.getElementById('featPrice').value = sell > 0 ? sell : 0;
+  }
+}
+
+/* =============================================
+   FEATURED PRODUCT EDITING MODAL
+   ============================================= */
+let currentEditFeaturedId = null;
+
+/* =============================================
+   PRODUCT EDIT FUNCTIONS (for both regular & featured)
+   ============================================= */
+// Note: currentEditProductId is already declared above for category editing
+let currentEditIsFeatured = false;
+
+function calculateEditPrice() {
+  const msrp     = parseFloat(document.getElementById('editProdOriginalPrice').value);
+  let   discount = parseFloat(document.getElementById('editProdDiscount').value);
+  if (discount < 0) { discount = 0; document.getElementById('editProdDiscount').value = 0; }
+  if (discount > 100) { discount = 100; document.getElementById('editProdDiscount').value = 100; }
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    const sell = +(msrp * (1 - discount / 100)).toFixed(2);
+    document.getElementById('editProdPrice').value = sell > 0 ? sell : 0;
+  }
+}
+
+/* =============================================
+   PRODUCT EDIT MODAL — tab switching
+   ============================================= */
+function switchEditTab(tabName) {
+  document.querySelectorAll('.edit-tab').forEach(t => t.classList.remove('active-edit-tab'));
+  document.querySelectorAll('.edit-tab-content').forEach(c => c.classList.add('hidden'));
+  document.getElementById('editTab-' + tabName).classList.remove('hidden');
+  event.target.classList.add('active-edit-tab');
+}
+
+// Highlights helpers
+let editHighlights = [];
+function renderEditHighlights() {
+  const el = document.getElementById('editHighlightsList');
+  if (!editHighlights.length) { el.innerHTML = '<p class="text-xs text-gray-500">No highlights yet</p>'; return; }
+  el.innerHTML = editHighlights.map((h, i) => `
+    <div class="flex items-center gap-2 bg-gray-700 rounded-lg px-3 py-2">
+      <span class="text-blue-400 text-sm">•</span>
+      <span class="flex-1 text-sm text-white">${escapeHtml(h)}</span>
+      <button onclick="removeEditHighlight(${i})" class="text-red-400 hover:text-red-300 text-xs">✕</button>
+    </div>`).join('');
+}
+function addEditHighlight() {
+  const inp = document.getElementById('editHighlightInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  editHighlights.push(val);
+  inp.value = '';
+  renderEditHighlights();
+}
+function removeEditHighlight(i) {
+  editHighlights.splice(i, 1);
+  renderEditHighlights();
+}
+
+// Specs helpers
+let editSpecs = [];
+function renderEditSpecs() {
+  const el = document.getElementById('editSpecsList');
+  if (!editSpecs.length) { el.innerHTML = '<p class="text-xs text-gray-500">No specs yet</p>'; return; }
+  el.innerHTML = editSpecs.map((s, i) => `
+    <div class="flex items-center gap-2 bg-gray-700 rounded-lg px-3 py-2">
+      <span class="text-xs font-bold text-violet-300 w-32 shrink-0">${escapeHtml(s.key)}</span>
+      <span class="flex-1 text-sm text-white">${escapeHtml(s.value)}</span>
+      <button onclick="removeEditSpec(${i})" class="text-red-400 hover:text-red-300 text-xs">✕</button>
+    </div>`).join('');
+}
+function addEditSpec() {
+  const key   = document.getElementById('editSpecKey').value.trim();
+  const value = document.getElementById('editSpecValue').value.trim();
+  if (!key || !value) return;
+  editSpecs.push({ key, value });
+  document.getElementById('editSpecKey').value = '';
+  document.getElementById('editSpecValue').value = '';
+  renderEditSpecs();
+}
+function removeEditSpec(i) {
+  editSpecs.splice(i, 1);
+  renderEditSpecs();
+}
+
+function previewEditMedia() {
+  const mainUrl = document.getElementById('editProdImage').value.trim();
+  const mainPrev = document.getElementById('editMainImgPreview');
+  const mainEl   = document.getElementById('editMainImgEl');
+  if (mainUrl) { mainEl.src = mainUrl; mainPrev.classList.remove('hidden'); }
+  else { mainPrev.classList.add('hidden'); }
+
+  const galleryLines = document.getElementById('editProdImages').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const galleryPrev  = document.getElementById('editGalleryPreview');
+  galleryPrev.innerHTML = galleryLines.map(url =>
+    `<img src="${url}" class="h-20 w-20 object-cover rounded bg-gray-900" onerror="this.style.opacity=0.3">`
+  ).join('');
+}
+
+function openProductEditModal(productId) {
+  const product = window.adminProducts?.find(p => p._id === productId);
+  if (!product) { alert('Product not found'); return; }
+
+  currentEditProductId = productId;
+  currentEditIsFeatured = false;
+
+  // Reset tabs to basics
+  document.querySelectorAll('.edit-tab').forEach((t, i) => { if (i === 0) t.classList.add('active-edit-tab'); else t.classList.remove('active-edit-tab'); });
+  document.querySelectorAll('.edit-tab-content').forEach((c, i) => { if (i === 0) c.classList.remove('hidden'); else c.classList.add('hidden'); });
+
+  // Basics
+  document.getElementById('editProdName').value          = product.name          || '';
+  document.getElementById('editProdBrand').value         = product.brand         || '';
+  document.getElementById('editProdSku').value           = product.sku           || '';
+  document.getElementById('editProdPrice').value         = product.price         || '';
+  document.getElementById('editProdOriginalPrice').value = product.originalPrice || '';
+  document.getElementById('editProdDiscount').value      = product.discount      || '';
+  document.getElementById('editProdTags').value          = (product.tags || []).join(', ');
+
+  // Media
+  document.getElementById('editProdImage').value  = product.image  || '';
+  document.getElementById('editProdImages').value = (product.images || []).join('\n');
+  document.getElementById('editMainImgPreview').classList.add('hidden');
+  document.getElementById('editGalleryPreview').innerHTML = '';
+
+  // Details
+  document.getElementById('editProdDescription').value  = product.description  || '';
+  document.getElementById('editProdWarranty').value     = product.warranty     || '';
+  document.getElementById('editProdReturnPolicy').value = product.returnPolicy || '';
+  editHighlights = [...(product.highlights || [])];
+  renderEditHighlights();
+
+  // Specs
+  editSpecs = (product.specifications || []).map(s => ({ key: s.key, value: s.value }));
+  renderEditSpecs();
+
+  // Logistics
+  document.getElementById('editProdStock').value = product.stock ?? 0;
+
+  document.getElementById('productEditModal').classList.remove('hidden');
+  document.getElementById('productEditModal').classList.add('flex');
+}
+
+async function openFeaturedProductEditModal(productId) {
+  try {
+    const res = await fetch(`${API_BASE}/featured-products`);
+    const featured = await res.json();
+    const product = featured.find(p => p._id === productId);
+
+    if (!product) {
+      alert('Featured product not found');
+      return;
+    }
+
+    currentEditProductId = productId;
+    currentEditIsFeatured = true;
+
+    document.getElementById('editProdName').value = product.name || '';
+    document.getElementById('editProdBrand').value = product.brand || '';
+    document.getElementById('editProdImage').value = product.image || '';
+    document.getElementById('editProdPrice').value = product.price || '';
+    document.getElementById('editProdOriginalPrice').value = product.originalPrice || '';
+    document.getElementById('editProdDiscount').value = product.discount || '';
+
+    document.getElementById('productEditModal').classList.remove('hidden');
+    document.getElementById('productEditModal').classList.add('flex');
+  } catch (err) {
+    console.error('Error fetching featured product:', err);
+    alert('Error loading featured product');
+  }
+}
+
+function closeProductEditModal() {
+  document.getElementById('productEditModal').classList.add('hidden');
+  document.getElementById('productEditModal').classList.remove('flex');
+  currentEditProductId = null;
+  currentEditIsFeatured = false;
+}
+
+async function saveProductEdit() {
+  if (!currentEditProductId) return;
+
+  const name          = document.getElementById('editProdName').value.trim();
+  const brand         = document.getElementById('editProdBrand').value.trim();
+  const sku           = document.getElementById('editProdSku').value.trim();
+  const image         = document.getElementById('editProdImage').value.trim();
+  const imagesRaw     = document.getElementById('editProdImages').value.split('\n').map(l => l.trim()).filter(Boolean);
+  let   price         = parseFloat(document.getElementById('editProdPrice').value);
+  const originalPrice = parseFloat(document.getElementById('editProdOriginalPrice').value) || undefined;
+  const discount      = parseFloat(document.getElementById('editProdDiscount').value) || undefined;
+  const tagsRaw       = document.getElementById('editProdTags').value;
+  const tags          = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+  const description   = document.getElementById('editProdDescription').value.trim();
+  const warranty      = document.getElementById('editProdWarranty').value.trim();
+  const returnPolicy  = document.getElementById('editProdReturnPolicy').value.trim();
+  const stock         = parseInt(document.getElementById('editProdStock').value) || 0;
+
+  if (isNaN(price) && originalPrice && discount) {
+    price = +(originalPrice * (1 - discount / 100)).toFixed(2);
+    document.getElementById('editProdPrice').value = price;
+  }
+
+  if (!name || !brand || !image || isNaN(price) || price <= 0) {
+    alert('Name, Brand, Image and Sell Price are required');
+    return;
+  }
+
+  const body = {
+    name, brand, sku, price, image,
+    images: imagesRaw,
+    tags, description, warranty, returnPolicy, stock,
+    highlights: editHighlights,
+    specifications: editSpecs
+  };
+  if (originalPrice) body.originalPrice = originalPrice;
+  if (discount)      body.discount      = discount;
+
+  const endpoint = currentEditIsFeatured
+    ? `${API_BASE}/featured-products/${currentEditProductId}`
+    : `${API_BASE}/products/${currentEditProductId}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      alert('Product updated successfully!');
+      closeProductEditModal();
+      currentEditIsFeatured ? loadAdminFeatured() : loadAdminProducts();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to update product');
+    }
+  } catch (err) {
+    console.error('Error updating product:', err);
+    alert('Error updating product');
+  }
+}
+
+/* =============================================
+   FEATURED PRODUCT EDIT MODAL (separate modal)
+   ============================================= */
+function openFeaturedEditModal(productId) {
+  const product = (window.adminFeatured || []).find(p => p._id === productId);
+  if (!product) { alert('Product not found'); return; }
+
+  currentEditFeaturedId = productId;
+  document.getElementById('feditName').value          = product.name || '';
+  document.getElementById('feditBrand').value         = product.brand || '';
+  document.getElementById('feditPrice').value         = product.price || '';
+  document.getElementById('feditOriginalPrice').value = product.originalPrice || '';
+  document.getElementById('feditDiscount').value      = product.discount || '';
+  document.getElementById('feditImage').value         = product.image || '';
+  document.getElementById('feditMsg').classList.add('hidden');
+
+  document.getElementById('featuredEditModal').classList.remove('hidden');
+  document.getElementById('featuredEditModal').classList.add('flex');
+}
+
+function closeFeaturedEditModal() {
+  document.getElementById('featuredEditModal').classList.add('hidden');
+  document.getElementById('featuredEditModal').classList.remove('flex');
+  currentEditFeaturedId = null;
+}
+
+function feditCalcFromMsrp() {
+  const msrp     = parseFloat(document.getElementById('feditOriginalPrice').value);
+  const discount = parseFloat(document.getElementById('feditDiscount').value);
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    document.getElementById('feditPrice').value = +(msrp * (1 - discount / 100)).toFixed(2);
+  }
+}
+function feditCalcFromSellPrice() {
+  const msrp = parseFloat(document.getElementById('feditOriginalPrice').value);
+  const sell  = parseFloat(document.getElementById('feditPrice').value);
+  if (!isNaN(msrp) && !isNaN(sell) && msrp > 0) {
+    if (sell > msrp) {
+      document.getElementById('feditOriginalPrice').value = sell;
+      document.getElementById('feditDiscount').value      = '';
+    } else {
+      document.getElementById('feditDiscount').value = +(((msrp - sell) / msrp) * 100).toFixed(2);
+    }
+  }
+}
+function feditCalcFromDiscount() {
+  const msrp     = parseFloat(document.getElementById('feditOriginalPrice').value);
+  let   discount = parseFloat(document.getElementById('feditDiscount').value);
+  if (discount < 0)   { discount = 0;   document.getElementById('feditDiscount').value = 0; }
+  if (discount > 100) { discount = 100; document.getElementById('feditDiscount').value = 100; }
+  if (!isNaN(msrp) && !isNaN(discount)) {
+    document.getElementById('feditPrice').value = +(msrp * (1 - discount / 100)).toFixed(2);
+  }
+}
+
+async function saveFeaturedEdit() {
+  if (!currentEditFeaturedId) return;
+  const name          = document.getElementById('feditName').value.trim();
+  const brand         = document.getElementById('feditBrand').value.trim();
+  const price         = parseFloat(document.getElementById('feditPrice').value);
+  const image         = document.getElementById('feditImage').value.trim();
+  const originalPrice = parseFloat(document.getElementById('feditOriginalPrice').value) || undefined;
+  const discount      = parseFloat(document.getElementById('feditDiscount').value) || undefined;
+  const msgEl         = document.getElementById('feditMsg');
+
+  if (!name || !brand || isNaN(price) || !image) {
+    msgEl.textContent = 'Please fill all required fields.';
+    msgEl.className   = 'text-xs text-red-400 text-center';
+    msgEl.classList.remove('hidden');
+    return;
+  }
+
+  const body = { name, brand, price, image };
+  if (originalPrice) body.originalPrice = originalPrice;
+  if (discount) body.discount = discount;
+
+  try {
+    const res = await fetch(`${API_BASE}/featured-products/${currentEditFeaturedId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      msgEl.textContent = 'Updated successfully!';
+      msgEl.className   = 'text-xs text-green-400 text-center';
+      msgEl.classList.remove('hidden');
+      setTimeout(() => { closeFeaturedEditModal(); loadAdminFeatured(); }, 800);
+    } else {
+      const data = await res.json();
+      msgEl.textContent = data.error || 'Failed to update product';
+      msgEl.className   = 'text-xs text-red-400 text-center';
+      msgEl.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('Error updating featured product:', err);
+    msgEl.textContent = 'Error updating product';
+    msgEl.className   = 'text-xs text-red-400 text-center';
+    msgEl.classList.remove('hidden');
+  }
+}
+
+/* =============================================
+   FEATURED CATEGORY EDITING (via existing modal)
+   ============================================= */
+let currentEditFeaturedProductId = null;
+
+async function openFeaturedCategoryEditModal(productId) {
+  const product = (window.adminFeatured || []).find(p => p._id === productId);
+  if (!product) {
+    alert('Featured product not found');
+    return;
+  }
+
+  currentEditFeaturedProductId = productId;
+  currentEditProductId = null; // clear regular product ID
+  selectedEditSubcategories = [];
+  document.getElementById('editProductName').textContent = product.name + ' (Featured)';
+
+  if (allCategories.length === 0) await loadCategories();
+
+  currentEditCategories = product.categories || [];
+  renderCurrentCategories();
+
+  if (currentEditCategories.length > 0) {
+    showEditSubcategories(currentEditCategories[0]._id || currentEditCategories[0]);
+  }
+
+  // Override save to target featured endpoint
+  document.querySelector('#categoryEditModal .flex button:last-child').onclick = saveFeaturedProductCategories;
+
+  document.getElementById('categoryEditModal').classList.remove('hidden');
+  document.getElementById('categoryEditModal').classList.add('flex');
+}
+
+async function saveFeaturedProductCategories() {
+  if (!currentEditFeaturedProductId) return;
+
+  const categoryIds = currentEditCategories.map(c => {
+    const id = typeof c === 'object' ? c._id : c;
+    return id.toString();
+  });
+
+  const subCategories = selectedEditSubcategories.map(key => {
+    const [catId, subName] = key.split(':');
+    const cat = allCategories.find(c => c._id.toString() === catId);
+    return cat ? `${cat.name}:${subName}` : key;
+  });
+
+  try {
+    const res = await fetch(`${API_BASE}/featured-products/${currentEditFeaturedProductId}/categories`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ categories: categoryIds, selectedSubcategories: subCategories })
+    });
+
+    if (res.ok) {
+      await loadAdminFeatured();
+      closeFeaturedCategoryEditModal();
+      alert('Categories updated successfully!');
+    } else {
+      const error = await res.json();
+      alert('Failed to update categories: ' + (error.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    alert('Failed to update categories');
+  }
+}
+
+function closeFeaturedCategoryEditModal() {
+  // Restore original save handler
+  document.querySelector('#categoryEditModal .flex button:last-child').onclick = saveProductCategories;
+  closeCategoryEditModal();
+  currentEditFeaturedProductId = null;
+}
+
+/* INIT */
+function initApp() {
+  const token = localStorage.getItem("adminToken");
+
+  if (token) {
+    document.getElementById("loginOverlay").style.display = "none";
+
+    loadAdminProducts();
+    loadAdminFeatured();
+    loadCategories();
+    loadComplaints();
+    loadOrders();
+    loadPromoCodes();
+
+    setInterval(loadComplaints, 10000);
+    setInterval(loadOrders, 15000);
+  } else {
+    document.getElementById("loginOverlay").style.display = "flex";
+  }
+}
+
+/* PROMO CODES MANAGEMENT */
+let promoCodesList = [];
+
+async function loadPromoCodes() {
+  const container = document.getElementById('promoCodesGrid');
+  try {
+    const res = await fetch(`${API_BASE}/admin/promo-codes`, {
+      headers: getAuthHeaders()
+    });
+    promoCodesList = await res.json();
+    localStorage.setItem("neobazaar_promos", JSON.stringify(promoCodesList));
+
+    if (!promoCodesList.length) {
+      container.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">No promo codes yet</p>';
+      return;
+    }
+
+    container.innerHTML = promoCodesList.map((p) => {
+      const discountLabel = p.discountType === 'fixed' ? `₹${p.value} off` : `${p.value}% off`;
+      const minAmountLabel = p.minAmount > 0 ? ` (Min: ₹${p.minAmount})` : '';
+      const usageLabel = p.usageLimit > 0 ? ` | Used: ${p.usedCount}/${p.usageLimit}` : '';
+      const oneTimeLabel = p.oneTimePerAccount ? ' | One-time per account' : '';
+      return `
+      <div class="bg-gray-700 border ${p.active ? 'border-gray-600' : 'border-red-600 opacity-50'} rounded-lg p-4 hover:border-pink-500 transition">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-2xl font-bold text-pink-400">${p.code}</span>
+          <span class="text-xl font-bold text-green-400">${discountLabel}</span>
+        </div>
+        <p class="text-gray-300 text-sm mb-1">${p.desc || 'No description'}</p>
+        <p class="text-xs text-blue-400 mb-2">${minAmountLabel}${usageLabel}${oneTimeLabel}</p>
+        <p class="text-xs ${p.active ? 'text-green-400' : 'text-red-400'} mb-4">${p.active ? '✓ Active' : '✗ Inactive'}</p>
+        <div class="flex gap-2">
+          <button onclick="togglePromoCode('${p._id}', ${!p.active})" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm transition">
+            ${p.active ? 'Deactivate' : 'Activate'}
+          </button>
+          <button onclick="editPromoCode('${p._id}')" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded text-sm transition">
+            Edit
+          </button>
+          <button onclick="deletePromoCode('${p._id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm transition">
+            Delete
+          </button>
+        </div>
+      </div>
+    `}).join('');
+  } catch (err) {
+    console.error('Failed to load promo codes:', err);
+    container.innerHTML = '<p class="text-red-400 col-span-full text-center py-8">Failed to load promo codes</p>';
+  }
+}
+
+async function addPromoCode() {
+  const codeInput = document.getElementById('promoCode');
+  const typeInput = document.getElementById('promoType');
+  const valueInput = document.getElementById('promoValue');
+  const minAmountInput = document.getElementById('promoMinAmount');
+  const usageLimitInput = document.getElementById('promoUsageLimit');
+  const oneTimeInput = document.getElementById('promoOneTime');
+  const descInput = document.getElementById('promoDesc');
+
+  const code = codeInput.value.trim().toUpperCase();
+  const discountType = typeInput.value;
+  const value = parseInt(valueInput.value);
+  const minAmount = parseInt(minAmountInput.value) || 0;
+  const usageLimit = parseInt(usageLimitInput.value) || 0;
+  const oneTimePerAccount = oneTimeInput.checked;
+  const desc = descInput.value.trim();
+
+  if (!code || !value || value < 1) {
+    alert('Please enter a valid code and discount value');
+    return;
+  }
+
+  if (discountType === 'percent' && value > 100) {
+    alert('Percentage discount cannot exceed 100%');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/promo-codes`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ code, discountType, value, minAmount, usageLimit, oneTimePerAccount, desc })
+    });
+
+    if (res.ok) {
+      codeInput.value = '';
+      typeInput.value = 'percent';
+      valueInput.value = '';
+      minAmountInput.value = '';
+      usageLimitInput.value = '';
+      oneTimeInput.checked = false;
+      descInput.value = '';
+      await loadPromoCodes();
+      localStorage.setItem("neobazaar_promos", JSON.stringify(promoCodesList));
+      alert('Promo code added successfully!');
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to add promo code');
+    }
+  } catch (err) {
+    console.error('Error adding promo code:', err);
+    alert('Error adding promo code');
+  }
+}
+
+async function deletePromoCode(id) {
+  if (!confirm('Delete this promo code?')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/promo-codes/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    if (res.ok) {
+      await loadPromoCodes();
+      localStorage.setItem("neobazaar_promos", JSON.stringify(promoCodesList));
+      alert('Promo code deleted!');
+    } else {
+      alert('Failed to delete promo code');
+    }
+  } catch (err) {
+    console.error('Error deleting promo code:', err);
+    alert('Error deleting promo code');
+  }
+}
+
+async function togglePromoCode(id, active) {
+  try {
+    const res = await fetch(`${API_BASE}/promo-codes/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ active })
+    });
+
+    if (res.ok) {
+      await loadPromoCodes();
+    } else {
+      alert('Failed to update promo code');
+    }
+  } catch (err) {
+    console.error('Error updating promo code:', err);
+    alert('Error updating promo code');
+  }
+}
+
+async function editPromoCode(id) {
+  const promo = promoCodesList.find(p => p._id === id);
+  if (!promo) return;
+
+  const newType = confirm(`Current type: ${promo.discountType === 'fixed' ? 'Fixed ₹' + promo.value : promo.value + '%'}\n\nClick OK for Percentage, Cancel for Fixed Amount`);
+  const discountType = newType ? 'percent' : 'fixed';
+
+  const valuePrompt = discountType === 'percent' ? 
+    `Enter discount percentage (1-100) for ${promo.code}:` : 
+    `Enter fixed discount amount (₹) for ${promo.code}:`;
+  const newValue = prompt(valuePrompt, promo.value);
+  if (newValue === null) return;
+
+  const value = parseInt(newValue);
+  if (isNaN(value) || value < 1 || (discountType === 'percent' && value > 100)) {
+    alert('Please enter a valid discount value');
+    return;
+  }
+
+  const newMinAmount = prompt(`Edit minimum order amount (₹) for ${promo.code}:`, promo.minAmount || 0);
+  if (newMinAmount === null) return;
+  const minAmount = parseInt(newMinAmount) || 0;
+
+  const newUsageLimit = prompt(`Edit usage limit (0 = unlimited) for ${promo.code}:`, promo.usageLimit || 0);
+  if (newUsageLimit === null) return;
+  const usageLimit = parseInt(newUsageLimit) || 0;
+
+  const oneTimePerAccount = confirm(`Make this code one-time use per account?\n\nCurrently: ${promo.oneTimePerAccount ? 'YES' : 'NO'}\n\nClick OK for YES, Cancel for NO`);
+
+  const newDesc = prompt(`Edit description for ${promo.code}:`, promo.desc || '');
+  if (newDesc === null) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/promo-codes/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ discountType, value, minAmount, usageLimit, oneTimePerAccount, desc: newDesc.trim() })
+    });
+
+    if (res.ok) {
+      await loadPromoCodes();
+      alert('Promo code updated!');
+    } else {
+      alert('Failed to update promo code');
+    }
+  } catch (err) {
+    console.error('Error updating promo code:', err);
+    alert('Error updating promo code');
+  }
+}
+
+initApp();
+</script>
+
+<!-- FEATURED PRODUCT EDIT MODAL -->
+<div id="featuredEditModal" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+  <div class="bg-gray-800 border border-gray-600 rounded-2xl p-6 w-full max-w-md mx-4 relative max-h-[90vh] overflow-y-auto">
+    <button onclick="closeFeaturedEditModal()" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">✕</button>
+    <h2 class="text-2xl font-bold mb-5 text-violet-400">Edit Featured Product</h2>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Product Name</label>
+        <input id="feditName" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="Product name">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Brand</label>
+        <input id="feditBrand" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="Brand name">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">MSRP / Original Price (₹)</label>
+        <input id="feditOriginalPrice" type="number" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="1999.99 (optional)" oninput="feditCalcFromMsrp()">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Sell Price (₹)</label>
+        <input id="feditPrice" type="number" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="999.99" oninput="feditCalcFromSellPrice()">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Discount %</label>
+        <input id="feditDiscount" type="number" min="0" max="100" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="65 (optional)" oninput="feditCalcFromDiscount()">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Image URL</label>
+        <input id="feditImage" type="url" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500" placeholder="https://example.com/image.jpg">
+      </div>
+      <p id="feditMsg" class="text-xs text-center hidden"></p>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeFeaturedEditModal()" class="flex-1 py-3 rounded-lg font-bold text-sm bg-gray-700 hover:bg-gray-600 transition">Cancel</button>
+        <button onclick="saveFeaturedEdit()" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-lg font-bold text-sm transition">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY EDIT MODAL -->
+<div id="categoryEditModal" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+  <div class="bg-gray-800 border border-gray-600 rounded-2xl p-6 w-full max-w-md mx-4 relative max-h-[80vh] overflow-y-auto">
+    <button onclick="closeCategoryEditModal()" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">✕</button>
+    <h2 class="text-2xl font-bold mb-4 text-violet-400">Edit Product Categories</h2>
+    <p id="editProductName" class="text-gray-300 text-sm mb-4"></p>
+    
+    <!-- Current Categories -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-300 mb-2">Current Categories</label>
+      <div id="currentCategoriesList" class="flex flex-wrap gap-2 mb-2">
+        <!-- Current categories will appear here -->
+      </div>
+    </div>
+    
+    <!-- Add Category -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-300 mb-2">Add Category</label>
+      <div class="relative">
+        <input 
+          id="editCategorySearch" 
+          type="text" 
+          class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-violet-500"
+          placeholder="Search or type new category..."
+          oninput="searchEditCategories(this.value)"
+        >
+        <div id="editCategoryDropdown" class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg max-h-40 overflow-y-auto hidden">
+          <!-- Category suggestions -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Subcategories Section -->
+    <div id="editSubcategorySection" class="mb-4 hidden">
+      <label class="block text-sm font-medium text-gray-300 mb-2">Subcategories (select or add new)</label>
+      <div id="editSubcategoryList" class="flex flex-wrap gap-2 mb-2">
+        <!-- Subcategory checkboxes will appear here -->
+      </div>
+      <div class="flex gap-2">
+        <input 
+          id="newSubcategoryInput" 
+          type="text" 
+          class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-violet-500"
+          placeholder="Add new subcategory..."
+          onkeypress="if(event.key==='Enter')addSubcategoryToEdit()"
+        >
+        <button onclick="addSubcategoryToEdit()" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded-lg text-sm">+ Add</button>
+      </div>
+    </div>
+    
+    <p id="editCategoryMsg" class="text-xs text-center mb-4 hidden"></p>
+    
+    <div class="flex gap-3">
+      <button onclick="closeCategoryEditModal()" class="flex-1 py-3 rounded-lg font-bold text-sm bg-gray-700 hover:bg-gray-600 transition">Cancel</button>
+      <button onclick="saveProductCategories()" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-lg font-bold text-sm transition">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MANAGER MODAL -->
+<div id="categoryManagerModal" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+  <div class="bg-gray-800 border border-gray-600 rounded-2xl p-6 w-full max-w-2xl mx-4 relative max-h-[85vh] overflow-y-auto">
+    <button onclick="closeCategoryManager()" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">✕</button>
+    <h2 class="text-2xl font-bold mb-4 text-violet-400">Manage Categories</h2>
+    <p class="text-gray-300 text-sm mb-4">Edit or delete categories and subcategories</p>
+    
+    <!-- Add new category -->
+    <div class="flex gap-2 mb-6">
+      <input id="newCategoryInput" type="text" placeholder="New category name..." 
+        class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-violet-500">
+      <button onclick="addNewCategory()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+        Add Category
+      </button>
+    </div>
+    
+    <!-- Categories list -->
+    <div id="categoryManagerList" class="space-y-3">
+      <p class="text-gray-400 text-center py-4">Loading categories...</p>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT EDIT MODAL — full detail editor -->
+<div id="productEditModal" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+  <div class="bg-gray-800 border border-gray-600 rounded-2xl w-full max-w-3xl mx-4 relative flex flex-col" style="max-height:92vh">
+    <div class="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
+      <h2 class="text-2xl font-bold text-blue-400">✏️ Edit Product</h2>
+      <button onclick="closeProductEditModal()" class="text-gray-400 hover:text-white text-xl">✕</button>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="flex gap-1 px-6 pt-4 border-b border-gray-700 flex-shrink-0 overflow-x-auto">
+      <button onclick="switchEditTab('basics')"    class="edit-tab active-edit-tab px-4 py-2 rounded-t-lg text-sm font-semibold whitespace-nowrap">Basics</button>
+      <button onclick="switchEditTab('media')"     class="edit-tab px-4 py-2 rounded-t-lg text-sm font-semibold whitespace-nowrap">🖼 Media</button>
+      <button onclick="switchEditTab('details')"   class="edit-tab px-4 py-2 rounded-t-lg text-sm font-semibold whitespace-nowrap">📋 Details</button>
+      <button onclick="switchEditTab('specs')"     class="edit-tab px-4 py-2 rounded-t-lg text-sm font-semibold whitespace-nowrap">⚙️ Specs</button>
+      <button onclick="switchEditTab('logistics')" class="edit-tab px-4 py-2 rounded-t-lg text-sm font-semibold whitespace-nowrap">📦 Logistics</button>
+    </div>
+
+    <div class="overflow-y-auto flex-1 p-6">
+
+      <!-- TAB: BASICS -->
+      <div id="editTab-basics" class="edit-tab-content space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-1">Product Name <span class="text-red-400">*</span></label>
+            <input id="editProdName" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Brand <span class="text-red-400">*</span></label>
+            <input id="editProdBrand" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">SKU / Product Code</label>
+            <input id="editProdSku" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="e.g. WH-XM5-BLK">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">MSRP / Original (₹)</label>
+            <input id="editProdOriginalPrice" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" oninput="calculateEditPrice()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Sell Price (₹) <span class="text-red-400">*</span></label>
+            <input id="editProdPrice" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Discount %</label>
+            <input id="editProdDiscount" type="number" min="0" max="100" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" oninput="calculateEditPrice()">
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 -mt-2">Price auto-calculates when MSRP + Discount are entered</p>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Tags <span class="text-gray-500 font-normal">— comma separated</span></label>
+          <input id="editProdTags" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="wireless, noise cancelling, premium">
+        </div>
+      </div>
+
+      <!-- TAB: MEDIA -->
+      <div id="editTab-media" class="edit-tab-content hidden space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Main Image URL <span class="text-red-400">*</span></label>
+          <input id="editProdImage" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="https://...">
+          <div id="editMainImgPreview" class="mt-2 hidden"><img class="h-32 rounded-lg object-contain bg-gray-900 p-1" id="editMainImgEl"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Gallery Images <span class="text-gray-500 font-normal">— one URL per line</span></label>
+          <textarea id="editProdImages" rows="5" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500 text-sm font-mono" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"></textarea>
+          <p class="text-xs text-gray-400 mt-1">First image is the main; these are shown in the gallery on the product page</p>
+          <div id="editGalleryPreview" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <button type="button" onclick="previewEditMedia()" class="text-xs text-blue-400 underline">Preview images</button>
+      </div>
+
+      <!-- TAB: DETAILS -->
+      <div id="editTab-details" class="edit-tab-content hidden space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+          <textarea id="editProdDescription" rows="6" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500 text-sm" placeholder="Full product description shown on the product page..."></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Highlights <span class="text-gray-500 font-normal">— key bullet points</span></label>
+          <div id="editHighlightsList" class="space-y-2 mb-2"></div>
+          <div class="flex gap-2">
+            <input id="editHighlightInput" type="text" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-blue-500" placeholder="e.g. 30-hour battery life" onkeypress="if(event.key==='Enter')addEditHighlight()">
+            <button onclick="addEditHighlight()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">+ Add</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Warranty</label>
+          <input id="editProdWarranty" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="e.g. 1 Year Manufacturer Warranty">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Return Policy</label>
+          <input id="editProdReturnPolicy" type="text" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="e.g. 10-day easy returns">
+        </div>
+      </div>
+
+      <!-- TAB: SPECS -->
+      <div id="editTab-specs" class="edit-tab-content hidden">
+        <p class="text-xs text-gray-400 mb-3">These appear as a specification table on the product page (e.g. Color, RAM, Weight).</p>
+        <div id="editSpecsList" class="space-y-2 mb-3"></div>
+        <div class="flex gap-2">
+          <input id="editSpecKey"   type="text" placeholder="Spec name (e.g. Color)"  class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-blue-500" onkeypress="if(event.key==='Enter')addEditSpec()">
+          <input id="editSpecValue" type="text" placeholder="Value (e.g. Matte Black)" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-blue-500" onkeypress="if(event.key==='Enter')addEditSpec()">
+          <button onclick="addEditSpec()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">+ Add</button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">Tip: drag rows to reorder (coming soon)</p>
+      </div>
+
+      <!-- TAB: LOGISTICS -->
+      <div id="editTab-logistics" class="edit-tab-content hidden space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Stock Quantity</label>
+            <input id="editProdStock" type="number" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="0">
+            <p class="text-xs text-gray-400 mt-1">Set to 0 to mark as out of stock</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end scroll area -->
+
+    <div class="border-t border-gray-700 p-6 flex gap-3 flex-shrink-0">
+      <button onclick="closeProductEditModal()" class="flex-1 py-3 rounded-lg font-bold text-sm bg-gray-700 hover:bg-gray-600 transition">Cancel</button>
+      <button onclick="saveProductEdit()" class="flex-1 bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 text-white font-bold py-3 rounded-lg transition">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.edit-tab { color: #9b93c4; transition: all 0.2s; border-bottom: 3px solid transparent; }
+.edit-tab:hover { color: #f0eeff; }
+.active-edit-tab { color: #60a5fa; border-bottom: 3px solid #60a5fa; }
+.edit-tab-content { }
+</style>
+
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Complaints - NeoBazaar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600&family=DM+Sans&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0918;
+      --surface: #121020;
+      --card: #1a1730;
+      --border: #2a2248;
+      --purple: #a78bfa;
+      --orange: #f97316;
+      --text: #e2deff;
+      --muted: #6b5fa0;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background-color: var(--surface);
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      color: var(--purple);
+      margin: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    h2 {
+      font-family: 'Syne', sans-serif;
+      color: var(--purple);
+      margin-bottom: 1rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    input, textarea {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--muted);
+    }
+
+    textarea {
+      resize: none; 
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--purple), var(--orange));
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      color: var(--bg);
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    #message-box {
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: var(--orange);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Complaints</h1>
+  </header>
+
+  <div class="container">
+    <!-- Customer Form -->
+    <h2>Submit a Complaint</h2>
+    <form id="complaint-form">
+      <input type="email" id="email" placeholder="Your Email" required>
+      <textarea id="message" rows="5" placeholder="Describe your issue..." required></textarea>
+      <button type="submit">Submit Complaint</button>
+    </form>
+    <!-- Success/Error message -->
+    <div id="message-box"></div>
+  </div>
+
+  <script>
+    // Submit complaint
+    document.getElementById('complaint-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+
+      const res = await fetch('http://localhost:5000/api/complaints', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, message })
+      });
+
+      const data = await res.json();
+      const msgBox = document.getElementById('message-box');
+
+      if (data.success) {
+        msgBox.textContent = "✅ Complaint submitted successfully!";
+        msgBox.style.color = "#16a34a"; // green
+        e.target.reset();
+      } else {
+        msgBox.textContent = "❌ Error submitting complaint. Please try again.";
+        msgBox.style.color = "#f97316"; // orange/red
+      }
+    });
+  </script>
+</body>
+</html>

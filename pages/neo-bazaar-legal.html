@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neo-Bazaar — Legal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:          #0b0914;
+      --bg2:         #100d1e;
+      --surface:     #16112b;
+      --surface2:    #1e1838;
+      --border:      #2e2550;
+      --purple:      #a855f7;
+      --purple-dim:  #7c3aed;
+      --orange:      #f97316;
+      --orange-dim:  #ea580c;
+      --grad:        linear-gradient(135deg, #a855f7 0%, #f97316 100%);
+      --grad-btn:    linear-gradient(90deg, #9333ea 0%, #f97316 100%);
+      --text:        #e2ddf5;
+      --muted:       #7b6fa8;
+      --heading:     #ffffff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Deep purple radial glow background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 70% -10%, rgba(168,85,247,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 10% 80%, rgba(124,58,237,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 90% 90%, rgba(249,115,22,0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Noise grain overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11,9,20,0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(168,85,247,0.2);
+      padding: 0 clamp(1.5rem, 5vw, 4rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .logo-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--grad);
+      animation: pulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity:1; box-shadow: 0 0 0 0 rgba(168,85,247,0.5); }
+      50% { transform: scale(1.5); opacity:0.7; box-shadow: 0 0 0 6px rgba(168,85,247,0); }
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .tab-nav button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px 16px;
+      border-radius: 7px;
+      transition: all 0.22s ease;
+      white-space: nowrap;
+    }
+    .tab-nav button.active {
+      background: var(--grad-btn);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* ── Hero Banner ── */
+    .hero {
+      position: relative;
+      padding: clamp(3rem, 8vw, 6rem) clamp(1.5rem, 5vw, 4rem) clamp(2rem, 5vw, 3.5rem);
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -80px;
+      width: 420px; height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--purple);
+      background: rgba(168,85,247,0.1);
+      border: 1px solid rgba(168,85,247,0.3);
+      border-radius: 100px;
+      padding: 4px 14px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 800;
+      color: var(--heading);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p.sub {
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 300;
+    }
+    .meta-strip {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .meta-strip span { display: flex; align-items: center; gap: 0.4rem; }
+    .meta-strip svg { opacity: 0.5; }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      gap: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(1.5rem, 5vw, 4rem) 6rem;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 84px;
+      padding-right: 2rem;
+      padding-top: 0.5rem;
+    }
+    .sidebar-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .sidebar-links { list-style: none; display: flex; flex-direction: column; gap: 0.1rem; }
+    .sidebar-links a {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 400;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border-left: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .sidebar-links a:hover,
+    .sidebar-links a.active {
+      color: var(--text);
+      background: rgba(168,85,247,0.07);
+      border-left-color: var(--purple);
+    }
+
+    /* ── Content Panel ── */
+    .content-panel { min-width: 0; }
+
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+
+    /* ── Section blocks ── */
+    .section-block {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .section-block:hover { border-color: rgba(168,85,247,0.35); box-shadow: 0 0 24px rgba(168,85,247,0.06); }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.4rem 1.75rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .section-header:hover .icon-wrap { background: rgba(168,85,247,0.18); }
+    .icon-wrap {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: rgba(168,85,247,0.1);
+      border: 1px solid rgba(168,85,247,0.25);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+      color: var(--purple);
+      font-size: 1rem;
+    }
+    .section-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--heading);
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+    .chevron {
+      color: var(--muted);
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+    .section-block.open .chevron { transform: rotate(180deg); }
+
+    .section-body {
+      padding: 1.75rem;
+      display: none;
+    }
+    .section-block.open .section-body { display: block; }
+
+    .section-body p { color: var(--text); font-size: 0.95rem; margin-bottom: 1rem; }
+    .section-body p:last-child { margin-bottom: 0; }
+    .section-body ul {
+      list-style: none;
+      margin: 0.75rem 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .section-body ul li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.93rem;
+      color: var(--text);
+    }
+    .section-body ul li::before {
+      content: '▸';
+      color: var(--purple);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .highlight-box {
+      background: rgba(168,85,247,0.07);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+      color: #c4a0f0;
+      margin: 1rem 0;
+      line-height: 1.6;
+    }
+
+    /* ── Divider ── */
+    .page-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 2.5rem 0 2rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .page-divider::before, .page-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Contact strip ── */
+    .contact-strip {
+      margin-top: 2.5rem;
+      padding: 2rem;
+      border: 1px dashed rgba(168,85,247,0.35);
+      border-radius: 16px;
+      background: rgba(168,85,247,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .contact-strip p { font-size: 0.93rem; color: var(--muted); }
+    .contact-strip strong { color: var(--text); }
+    .contact-strip a {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--grad-btn);
+      text-decoration: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      transition: opacity 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(147,51,234,0.35);
+    }
+    .contact-strip a:hover { opacity: 0.88; box-shadow: 0 4px 28px rgba(147,51,234,0.5); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-top: 1px solid rgba(168,85,247,0.15);
+    }
+    footer strong {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-family: 'Syne', sans-serif;
+    }
+
+    /* ── Expand all toggle ── */
+    .expand-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 1.25rem;
+    }
+    .expand-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .expand-btn:hover { color: var(--purple); border-color: var(--purple); }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <a href="#" class="logo">Neo-Bazaar <div class="logo-dot"></div></a>
+  <nav class="tab-nav">
+    <button class="active" onclick="switchTab('privacy', this)">Privacy & Policy</button>
+    <button onclick="switchTab('terms', this)">Terms & Conditions</button>
+  </nav>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-tag">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="5" r="1.5" fill="currentColor"/></svg>
+    Legal Documents
+  </div>
+  <h1>Transparency you <em>can trust.</em></h1>
+  <p class="sub">Your rights, your data, and the rules that govern our marketplace — all in one place, written plainly.</p>
+  <div class="meta-strip">
+    <span>
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Last updated: May 2, 2026
+    </span>
+    <span>
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      GDPR Compliant
+    </span>
+    <span>
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Effective immediately
+    </span>
+  </div>
+</section>
+
+<!-- ── MAIN LAYOUT ── -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <p class="sidebar-title">On this page</p>
+    <ul class="sidebar-links" id="sidebar-links"></ul>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content-panel">
+
+    <!-- ════════════════════════════════════════
+         PRIVACY & POLICY PAGE
+         ════════════════════════════════════════ -->
+    <div class="page active" id="page-privacy">
+      <div class="expand-row">
+        <button class="expand-btn" onclick="toggleAll('page-privacy')">Expand All</button>
+      </div>
+
+      <!-- 1 -->
+      <div class="section-block open" id="priv-1">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🔍</div>
+          <h2>1. Introduction</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Welcome to <strong>Neo-Bazaar</strong> ("we," "our," or "us"). We operate the Neo-Bazaar marketplace platform and related services (collectively, the "Platform"). This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you use our Platform.</p>
+          <p>By accessing or using Neo-Bazaar, you agree to the collection and use of information in accordance with this policy. If you do not agree, please discontinue use of the Platform.</p>
+          <div class="highlight-box">📌 This policy applies to all users including buyers, sellers, and visitors of Neo-Bazaar.</div>
+        </div>
+      </div>
+
+      <!-- 2 -->
+      <div class="section-block" id="priv-2">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🗂️</div>
+          <h2>2. Information We Collect</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We collect several types of information in connection with your use of the Platform:</p>
+          <ul>
+            <li><strong>Account Information:</strong> Name, email address, phone number, profile picture, and password when you register.</li>
+            <li><strong>Transaction Data:</strong> Purchase history, order details, payment method information (processed via secure third-party gateways), and shipping addresses.</li>
+            <li><strong>Device & Usage Data:</strong> IP address, browser type, operating system, pages visited, time spent, and referring URLs.</li>
+            <li><strong>Communications:</strong> Messages exchanged with sellers or our support team through the Platform.</li>
+            <li><strong>Location Data:</strong> General location derived from IP address, or precise location if you grant permission on mobile devices.</li>
+            <li><strong>Cookies & Trackers:</strong> Session cookies, persistent cookies, pixel tags, and similar tracking technologies (see Section 7).</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="section-block" id="priv-3">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">⚙️</div>
+          <h2>3. How We Use Your Information</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Your information enables us to operate and improve Neo-Bazaar. Specifically, we use it to:</p>
+          <ul>
+            <li>Create and manage your account, and verify your identity.</li>
+            <li>Process orders, payments, and refunds securely.</li>
+            <li>Connect buyers with sellers and facilitate transactions.</li>
+            <li>Personalise product recommendations and search results.</li>
+            <li>Send transactional emails, order updates, and service notifications.</li>
+            <li>Detect, investigate, and prevent fraudulent or unauthorised activity.</li>
+            <li>Analyse Platform performance and improve our features.</li>
+            <li>Comply with legal obligations and enforce our policies.</li>
+          </ul>
+          <p>We do <strong>not</strong> sell your personal data to third parties for their own marketing purposes.</p>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="section-block" id="priv-4">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🤝</div>
+          <h2>4. Sharing of Information</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We may share your information with trusted parties only as described here:</p>
+          <ul>
+            <li><strong>Sellers:</strong> When you purchase, we share your name and shipping address with the relevant seller to fulfil your order.</li>
+            <li><strong>Service Providers:</strong> Payment processors, logistics partners, email platforms, and cloud hosting providers acting on our behalf.</li>
+            <li><strong>Legal Authorities:</strong> If required by law, court order, or to protect the safety of users or the public.</li>
+            <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, your data may be transferred to the successor entity.</li>
+          </ul>
+          <div class="highlight-box">🔒 All third-party service providers are contractually bound to handle your data securely and only for the purposes we specify.</div>
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div class="section-block" id="priv-5">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🛡️</div>
+          <h2>5. Data Security</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We implement industry-standard safeguards to protect your information:</p>
+          <ul>
+            <li>TLS/SSL encryption for all data transmitted between your device and our servers.</li>
+            <li>AES-256 encryption for sensitive data stored at rest.</li>
+            <li>Role-based access control — only authorised personnel can access user data.</li>
+            <li>Regular security audits, vulnerability scans, and penetration testing.</li>
+            <li>Two-factor authentication (2FA) available for all accounts.</li>
+          </ul>
+          <p>While we strive to use commercially acceptable means to protect your information, no method of transmission over the Internet or electronic storage is 100% secure. We cannot guarantee absolute security.</p>
+        </div>
+      </div>
+
+      <!-- 6 -->
+      <div class="section-block" id="priv-6">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">👤</div>
+          <h2>6. Your Rights</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Depending on your jurisdiction, you may have the following rights regarding your personal data:</p>
+          <ul>
+            <li><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
+            <li><strong>Correction:</strong> Ask us to correct inaccurate or incomplete data.</li>
+            <li><strong>Erasure:</strong> Request deletion of your personal data ("right to be forgotten").</li>
+            <li><strong>Portability:</strong> Receive your data in a structured, machine-readable format.</li>
+            <li><strong>Objection:</strong> Object to certain types of processing, including marketing.</li>
+            <li><strong>Restriction:</strong> Request that we limit processing in certain circumstances.</li>
+          </ul>
+          <p>To exercise any of these rights, contact us at <strong>privacy@neo-bazaar.com</strong>. We will respond within 30 days.</p>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <div class="section-block" id="priv-7">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🍪</div>
+          <h2>7. Cookies Policy</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We use cookies and similar tracking technologies to enhance your experience on Neo-Bazaar. Cookies we use include:</p>
+          <ul>
+            <li><strong>Essential Cookies:</strong> Necessary for the Platform to function (e.g., login sessions, cart data). Cannot be disabled.</li>
+            <li><strong>Analytics Cookies:</strong> Help us understand how users navigate the Platform (e.g., Google Analytics).</li>
+            <li><strong>Preference Cookies:</strong> Remember your settings such as language and display preferences.</li>
+            <li><strong>Marketing Cookies:</strong> Used to show you relevant advertisements. You can opt out at any time.</li>
+          </ul>
+          <p>You can manage or delete cookies through your browser settings. Disabling certain cookies may affect Platform functionality.</p>
+        </div>
+      </div>
+
+      <!-- 8 -->
+      <div class="section-block" id="priv-8">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🌍</div>
+          <h2>8. International Data Transfers</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Neo-Bazaar operates globally. Your information may be transferred to and processed in countries other than your own, including countries that may have different data protection laws.</p>
+          <p>Wherever we transfer your data, we ensure appropriate safeguards are in place, such as Standard Contractual Clauses (SCCs) approved by relevant data protection authorities, to protect your privacy rights.</p>
+        </div>
+      </div>
+
+      <!-- 9 -->
+      <div class="section-block" id="priv-9">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🕐</div>
+          <h2>9. Data Retention</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We retain your personal data for as long as your account is active or as needed to provide services. Specifically:</p>
+          <ul>
+            <li>Account data is retained until you delete your account plus a 90-day grace period.</li>
+            <li>Transaction records are retained for 7 years for accounting and legal compliance.</li>
+            <li>Support communications are retained for 3 years.</li>
+            <li>Analytics data is retained in anonymised form indefinitely.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="section-block" id="priv-10">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">✏️</div>
+          <h2>10. Changes to This Policy</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We may update this Privacy Policy from time to time. We will notify you of significant changes by email and/or a prominent notice on the Platform at least 14 days before the change takes effect.</p>
+          <p>Continued use of Neo-Bazaar after the effective date constitutes acceptance of the updated policy.</p>
+        </div>
+      </div>
+
+      <div class="contact-strip">
+        <p><strong>Questions about your privacy?</strong><br>Our Data Protection team is here to help.</p>
+        <a href="mailto:privacy@neo-bazaar.com">Contact Privacy Team →</a>
+      </div>
+    </div><!-- /page-privacy -->
+
+
+    <!-- ════════════════════════════════════════
+         TERMS & CONDITIONS PAGE
+         ════════════════════════════════════════ -->
+    <div class="page" id="page-terms">
+      <div class="expand-row">
+        <button class="expand-btn" onclick="toggleAll('page-terms')">Expand All</button>
+      </div>
+
+      <!-- T1 -->
+      <div class="section-block open" id="terms-1">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">📄</div>
+          <h2>1. Acceptance of Terms</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>By accessing or using Neo-Bazaar — including browsing products, registering an account, or completing a purchase — you agree to be legally bound by these Terms & Conditions and our Privacy Policy.</p>
+          <p>If you are using Neo-Bazaar on behalf of a business or organisation, you represent that you have authority to bind that entity to these terms.</p>
+          <div class="highlight-box">⚠️ If you do not agree to these Terms, you must immediately stop using the Platform.</div>
+        </div>
+      </div>
+
+      <!-- T2 -->
+      <div class="section-block" id="terms-2">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">👥</div>
+          <h2>2. Eligibility</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>To use Neo-Bazaar, you must:</p>
+          <ul>
+            <li>Be at least 18 years of age (or the age of majority in your jurisdiction).</li>
+            <li>Have the legal capacity to enter into a binding contract.</li>
+            <li>Not be a person barred from receiving services under the laws of your country.</li>
+            <li>Provide accurate and truthful registration information.</li>
+          </ul>
+          <p>Minors under 18 may only use the Platform under the supervision of a parent or legal guardian who agrees to these Terms.</p>
+        </div>
+      </div>
+
+      <!-- T3 -->
+      <div class="section-block" id="terms-3">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🏪</div>
+          <h2>3. Seller Accounts & Listings</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Sellers on Neo-Bazaar agree to the following:</p>
+          <ul>
+            <li>All listings must be accurate, complete, and not misleading in any way.</li>
+            <li>Sellers are solely responsible for the legality, safety, and quality of their products.</li>
+            <li>Prohibited items include but are not limited to: counterfeit goods, illegal substances, weapons, and stolen property.</li>
+            <li>Sellers must fulfil confirmed orders promptly and honour their stated shipping timelines.</li>
+            <li>Sellers must respond to buyer messages within 48 hours.</li>
+            <li>Neo-Bazaar reserves the right to remove any listing that violates our policies without prior notice.</li>
+          </ul>
+          <p>Repeated violations may result in permanent account suspension and forfeiture of pending payouts.</p>
+        </div>
+      </div>
+
+      <!-- T4 -->
+      <div class="section-block" id="terms-4">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🛒</div>
+          <h2>4. Purchases & Payments</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>When you make a purchase on Neo-Bazaar:</p>
+          <ul>
+            <li>All prices are displayed in the applicable currency and include applicable taxes unless stated otherwise.</li>
+            <li>Payment is processed at the time of order placement via our secure payment partners.</li>
+            <li>Neo-Bazaar charges a service fee on each transaction, displayed clearly at checkout.</li>
+            <li>Orders are binding once confirmed. Cancellations are subject to the seller's cancellation policy.</li>
+            <li>In the event of a payment failure, you remain liable for any amounts owed.</li>
+          </ul>
+          <div class="highlight-box">💳 Neo-Bazaar does not store full card numbers. All payment processing is handled by PCI-DSS compliant providers.</div>
+        </div>
+      </div>
+
+      <!-- T5 -->
+      <div class="section-block" id="terms-5">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🔄</div>
+          <h2>5. Returns, Refunds & Disputes</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Neo-Bazaar provides a Buyer Protection Programme:</p>
+          <ul>
+            <li>If an item is significantly not as described, buyers may open a dispute within 7 days of delivery.</li>
+            <li>If an order does not arrive within the stated timeframe, buyers may raise a claim after the estimated delivery date.</li>
+            <li>Refunds, if approved, are processed within 5–10 business days to the original payment method.</li>
+            <li>Neo-Bazaar acts as a neutral mediator in disputes. Our decision is final.</li>
+          </ul>
+          <p>Return shipping costs are the responsibility of the buyer unless the item is defective or the seller is at fault.</p>
+        </div>
+      </div>
+
+      <!-- T6 -->
+      <div class="section-block" id="terms-6">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🚫</div>
+          <h2>6. Prohibited Conduct</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Users may not engage in the following on or through Neo-Bazaar:</p>
+          <ul>
+            <li>Posting false, misleading, or fraudulent content.</li>
+            <li>Impersonating any person or entity.</li>
+            <li>Harassing, threatening, or intimidating other users.</li>
+            <li>Attempting to circumvent our payment systems (e.g., off-platform transactions).</li>
+            <li>Scraping, crawling, or extracting data from the Platform without written consent.</li>
+            <li>Uploading malware, viruses, or any code designed to harm systems or users.</li>
+            <li>Manipulating reviews, ratings, or search rankings artificially.</li>
+            <li>Violating any applicable local, national, or international laws.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- T7 -->
+      <div class="section-block" id="terms-7">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">©️</div>
+          <h2>7. Intellectual Property</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>All content on the Neo-Bazaar Platform — including logos, trademarks, design, interface, code, and original text — is the intellectual property of Neo-Bazaar or its licensors and is protected by applicable copyright and trademark laws.</p>
+          <p>By listing products, you grant Neo-Bazaar a non-exclusive, royalty-free, worldwide licence to display and promote your listings on the Platform and in our marketing materials.</p>
+          <p>You retain all ownership rights to the content you upload. You are responsible for ensuring you have the rights to any content you post.</p>
+        </div>
+      </div>
+
+      <!-- T8 -->
+      <div class="section-block" id="terms-8">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">⚖️</div>
+          <h2>8. Limitation of Liability</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Neo-Bazaar is a marketplace platform that connects buyers and sellers. We are not a party to transactions between users.</p>
+          <ul>
+            <li>Neo-Bazaar is not liable for the quality, safety, legality, or delivery of products listed on the Platform.</li>
+            <li>To the maximum extent permitted by law, our total liability to you for any claim arising out of these Terms shall not exceed the amount you paid Neo-Bazaar in the 3 months prior to the claim.</li>
+            <li>We are not liable for indirect, incidental, special, or consequential damages, including lost profits or data.</li>
+          </ul>
+          <div class="highlight-box">📋 Nothing in this clause limits liability for fraud, death, or personal injury caused by our negligence, which cannot be excluded by law.</div>
+        </div>
+      </div>
+
+      <!-- T9 -->
+      <div class="section-block" id="terms-9">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🔚</div>
+          <h2>9. Termination</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>Neo-Bazaar reserves the right to suspend or terminate your account at any time, with or without notice, for:</p>
+          <ul>
+            <li>Violation of these Terms or our policies.</li>
+            <li>Fraudulent, abusive, or illegal activity.</li>
+            <li>Repeated negative reviews or unresolved disputes.</li>
+            <li>Any conduct that harms the community or reputation of Neo-Bazaar.</li>
+          </ul>
+          <p>You may close your account at any time from your account settings. Pending orders must be fulfilled before closure.</p>
+        </div>
+      </div>
+
+      <!-- T10 -->
+      <div class="section-block" id="terms-10">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">🏛️</div>
+          <h2>10. Governing Law & Disputes</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>These Terms are governed by and construed in accordance with the laws of [Your Jurisdiction], without regard to conflict of law principles.</p>
+          <p>Any dispute, controversy, or claim arising out of or in connection with these Terms shall first be attempted to be resolved through good-faith negotiation. If unresolved after 30 days, disputes shall be submitted to binding arbitration in [Your City] under the rules of [Arbitration Body].</p>
+          <p>You waive any right to participate in a class action lawsuit against Neo-Bazaar to the extent permitted by law.</p>
+        </div>
+      </div>
+
+      <!-- T11 -->
+      <div class="section-block" id="terms-11">
+        <div class="section-header" onclick="toggle(this)">
+          <div class="icon-wrap">📝</div>
+          <h2>11. Modifications to Terms</h2>
+          <svg class="chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="section-body">
+          <p>We may revise these Terms at any time. When we make material changes, we will:</p>
+          <ul>
+            <li>Post the updated Terms on this page with a new "Last Updated" date.</li>
+            <li>Send a notification email to registered users at least 14 days in advance.</li>
+            <li>Display a prominent banner on the Platform.</li>
+          </ul>
+          <p>Your continued use of Neo-Bazaar after the effective date of the revised Terms constitutes your acceptance. If you do not agree, you must stop using the Platform and may close your account.</p>
+        </div>
+      </div>
+
+      <div class="contact-strip">
+        <p><strong>Questions about our Terms?</strong><br>Our legal team is happy to clarify.</p>
+        <a href="mailto:legal@neo-bazaar.com">Contact Legal Team →</a>
+      </div>
+    </div><!-- /page-terms -->
+
+  </main>
+</div>
+
+<footer>
+  <p>© 2026 <strong>Neo-Bazaar</strong>. All rights reserved. &nbsp;·&nbsp; privacy@neo-bazaar.com &nbsp;·&nbsp; legal@neo-bazaar.com</p>
+</footer>
+
+<script>
+  /* ── Tab Switching ── */
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    buildSidebar(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── Accordion ── */
+  function toggle(header) {
+    header.parentElement.classList.toggle('open');
+  }
+
+  function toggleAll(pageId) {
+    const page = document.getElementById(pageId);
+    const blocks = page.querySelectorAll('.section-block');
+    const btn = page.querySelector('.expand-btn');
+    const allOpen = [...blocks].every(b => b.classList.contains('open'));
+    blocks.forEach(b => allOpen ? b.classList.remove('open') : b.classList.add('open'));
+    btn.textContent = allOpen ? 'Expand All' : 'Collapse All';
+  }
+
+  /* ── Sidebar Builder ── */
+  function buildSidebar(tab) {
+    const page = document.getElementById('page-' + tab);
+    const headings = page.querySelectorAll('.section-header h2');
+    const blocks = page.querySelectorAll('.section-block');
+    const list = document.getElementById('sidebar-links');
+    list.innerHTML = '';
+    headings.forEach((h, i) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#';
+      a.textContent = h.textContent;
+      a.onclick = (e) => {
+        e.preventDefault();
+        blocks[i].classList.add('open');
+        blocks[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+  }
+
+  /* init */
+  buildSidebar('privacy');
+</script>
+</body>
+</html>

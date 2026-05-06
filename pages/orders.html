@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Orders — Neo-Bazaar</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#0b0918;
+  --surface:#121020;
+  --card:#1a1730;
+  --border:#2a2248;
+  --purple:#a78bfa;
+  --orange:#f97316;
+  --text:#e2deff;
+  --muted:#6b5fa0;
+}
+
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans';
+  margin:0;
+}
+
+nav {
+  display:flex;
+  justify-content:space-between;
+  padding:16px 32px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+
+.logo {
+  font-family:'Syne';
+  font-weight:800;
+  font-size:20px;
+  background:linear-gradient(90deg,#a78bfa,#f97316);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-decoration:none;
+}
+
+.container {
+  max-width:900px;
+  margin:auto;
+  padding:40px 20px;
+}
+
+h1 {
+  font-family:'Syne';
+}
+
+.order-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+.order-header {
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:15px;
+}
+
+.status {
+  color:#22c55e;
+  font-size:13px;
+}
+
+.item {
+  display:flex;
+  justify-content:space-between;
+  margin:8px 0;
+}
+
+.total {
+  margin-top:15px;
+  font-weight:bold;
+  color:var(--orange);
+}
+
+.empty {
+  color:var(--muted);
+}
+
+.btn {
+  margin-top:20px;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-family:'Syne';
+  background:linear-gradient(135deg,#7c3aed,#f97316);
+  color:white;
+}
+
+.status-badge {
+  padding:4px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+}
+.status-placed { background:#ca8a04; color:white; }
+.status-shipped { background:#2563eb; color:white; }
+.status-delivered { background:#16a34a; color:white; }
+.status-cancelled { background:#dc2626; color:white; }
+
+.order-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:16px 0;
+}
+
+.order-info p:first-child {
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
+.order-info p:last-child {
+  font-weight:600;
+}
+
+.items-list {
+  border-top:1px solid var(--border);
+  margin-top:12px;
+  padding-top:12px;
+}
+
+.item-row {
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+  padding:4px 0;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <a href="../index.html" class="logo">Neo-Bazaar</a>
+  <a href="../index.html" style="color:var(--muted);text-decoration:none;">← Continue Shopping</a>
+</nav>
+
+<div class="container">
+  <h1>📦 My Orders</h1>
+
+  <div id="orders"></div>
+
+  <button class="btn" onclick="goHome()">Shop More</button>
+</div>
+
+<script>
+const container = document.getElementById("orders");
+const BASE = window.location.origin;
+
+async function loadOrders() {
+  // Get user email from localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const lastOrder = JSON.parse(localStorage.getItem("lastOrder"));
+  
+  // Try to get email from user object or lastOrder
+  const userEmail = user?.email || lastOrder?.email || null;
+  
+  if (!userEmail) {
+    container.innerHTML = `<p class="empty">Please log in to view your orders</p>`;
+    return;
+  }
+
+  try {
+    // Fetch orders from database by user email
+    const res = await fetch(`${BASE}/api/orders/user/${encodeURIComponent(userEmail)}`);
+    
+    if (!res.ok) {
+      throw new Error("Failed to fetch orders");
+    }
+    
+    const orders = await res.json();
+    
+    if (!orders || orders.length === 0) {
+      container.innerHTML = `<p class="empty">No orders yet</p>`;
+      return;
+    }
+
+    // Clear container and render all orders from database
+    container.innerHTML = '';
+    orders.forEach(order => {
+      const orderCard = renderOrderCard(order);
+      container.innerHTML += orderCard;
+    });
+    
+  } catch (err) {
+    console.error("Failed to load orders:", err);
+    // Fallback: show lastOrder from localStorage if available
+    if (lastOrder) {
+      container.innerHTML = renderOrderCard(lastOrder);
+    } else {
+      container.innerHTML = `<p class="empty">Failed to load orders. Please try again later.</p>`;
+    }
+  }
+}
+
+function renderOrderCard(order) {
+  // Handle both database format (_id) and localStorage format (orderId)
+  const id = order._id || order.orderId;
+  const orderId = id ? '#' + id.toString().substring(0, 8).toUpperCase() : '#NB' + Math.floor(Math.random() * 100000);
+  const total = Number(order.total || 0).toLocaleString();
+  const status = order.status || 'Placed';
+  
+  const statusClass = status === 'Delivered' ? 'status-delivered' : 
+                      status === 'Shipped' ? 'status-shipped' : 
+                      status === 'Cancelled' ? 'status-cancelled' : 'status-placed';
+  
+  const deliveryText = status === 'Placed' ? '📦 Processing' : 
+                       status === 'Shipped' ? '🚚 Out for Delivery' : 
+                       status === 'Delivered' ? '✅ Delivered' : status;
+
+  // Payment method and status
+  const paymentMethod = order.paymentMethod || 'cod';
+  const isCOD = paymentMethod === 'cod' || paymentMethod === 'Cash on Delivery';
+  // For COD: Paid only when Delivered, Not Paid when Placed or Shipped
+  const isCODPaid = isCOD && status === 'Delivered';
+  const paymentStatusText = (isCOD && !isCODPaid) ? '❌ Not Paid' : '✅ Paid';
+  const paymentStatusColor = (isCOD && !isCODPaid) ? '#dc2626' : '#16a34a';
+  const paymentMethodLabels = { cod: 'Cash on Delivery', upi: 'UPI', card: 'Credit / Debit Card' };
+  const paymentMethodDisplay = paymentMethodLabels[paymentMethod] || paymentMethod;
+
+  let itemsHTML = "";
+  order.items.forEach(item => {
+    const qty = item.quantity || item.qty || 1;
+    const itemTotal = (item.price * qty).toLocaleString();
+    itemsHTML += `
+      <div class="item-row">
+        <span>${item.name} × ${qty}</span>
+        <span style="color:var(--orange)">₹${itemTotal}</span>
+      </div>
+    `;
+  });
+
+  return `
+    <div class="order-card" style="border-left:4px solid var(--purple);">
+      <div class="order-header" style="align-items:center;">
+        <div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:4px;">Order ID</p>
+          <p style="font-size:18px;font-weight:bold;">${orderId}</p>
+        </div>
+        <span class="status-badge ${statusClass}">${status}</span>
+      </div>
+
+      <div class="order-grid">
+        <div class="order-info">
+          <p>Payment Method</p>
+          <p style="font-weight:500;">${paymentMethodDisplay}</p>
+        </div>
+        <div class="order-info">
+          <p>Payment Status</p>
+          <p style="color:${paymentStatusColor};">${paymentStatusText}</p>
+        </div>
+        <div class="order-info">
+          <p>Delivery Status</p>
+          <p style="color:${status === 'Delivered' ? '#16a34a' : '#ca8a04'};">${deliveryText}</p>
+        </div>
+        <div class="order-info">
+          <p>Total Amount</p>
+          <p style="color:var(--orange);font-size:20px;">₹${total}</p>
+        </div>
+      </div>
+
+      <div class="items-list">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Items</p>
+        ${itemsHTML}
+      </div>
+    </div>
+  `;
+}
+
+function goHome(){
+  window.location.href = "../index.html";
+}
+
+// Load orders on page load
+loadOrders();
+</script>
+
+</body>
+</html>

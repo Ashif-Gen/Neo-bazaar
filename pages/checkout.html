@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout — Neo-Bazaar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0b0918; --surface: #121020; --card: #1a1730;
+      --border: #2a2248; --purple: #a78bfa; --orange: #f97316;
+      --text: #e2deff; --muted: #c6c4c4; --success: #22c55e;
+      --danger: #ef4444;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+    /* NAV */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; background: linear-gradient(90deg, #a78bfa, #f97316); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+    .nav-back { color: var(--muted); font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color .2s; }
+    .nav-back:hover { color: var(--purple); }
+
+    /* PROGRESS */
+    .progress-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; justify-content: center; gap: 0; }
+    .prog-step { display: flex; align-items: center; gap: 8px; font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 600; color: var(--muted); letter-spacing: .05em; }
+    .prog-step.active { color: var(--purple); }
+    .prog-step.done { color: var(--success); }
+    .prog-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    .prog-line { width: 40px; height: 1px; background: var(--border); margin: 0 8px; }
+
+    /* LAYOUT */
+    .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+    @media (max-width: 768px) { .page { grid-template-columns: 1fr; } }
+
+    /* CARDS */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .card-title::before { content: ''; display: block; width: 3px; height: 14px; background: var(--purple); border-radius: 2px; }
+
+    /* FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid.full { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.span2 { grid-column: span 2; }
+    label { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+    input, select { background: #0e0c1c; border: 1px solid var(--border); border-radius: 9px; padding: 11px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .2s, box-shadow .2s; width: 100%; }
+    input::placeholder { color: var(--muted); }
+    input:focus, select:focus { border-color: var(--purple); box-shadow: 0 0 0 3px #a78bfa18; }
+    select option { background: #1a1730; }
+    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } .form-group.span2 { grid-column: span 1; } }
+
+    /* PAYMENT TABS */
+    .pay-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .pay-tab { flex: 1; min-width: 90px; padding: 12px 10px; border: 1.5px solid var(--border); border-radius: 10px; background: transparent; color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; text-align: center; letter-spacing: .04em; }
+    .pay-tab:hover { border-color: var(--purple); color: var(--purple); }
+    .pay-tab.active { border-color: var(--purple); color: var(--purple); background: #a78bfa12; }
+    .pay-panel { display: none; animation: fadeIn .2s ease; }
+    .pay-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .cod-box { background: #0e1c0e; border: 1px solid #1f4d1f; border-radius: 10px; padding: 16px; color: #86efac; font-size: 14px; line-height: 1.6; }
+    .upi-apps { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .upi-btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); font-size: 12px; cursor: pointer; transition: all .2s; }
+    .upi-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+    /* CART SUMMARY */
+    .cart-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .cart-item:last-child { border-bottom: none; }
+    .item-thumb { width: 48px; height: 48px; background: #2a2248; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; overflow: hidden; }
+    .item-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-qty { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .item-price { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--orange); white-space: nowrap; }
+
+    .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: var(--muted); }
+    .summary-row.total { font-size: 17px; font-weight: 700; color: var(--text); font-family: 'Syne', sans-serif; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 14px; }
+    .summary-row.total .amt { color: var(--orange); }
+    .summary-row .green { color: var(--success); }
+    .summary-row .red { color: var(--orange); }
+
+    .promo-row { display: flex; gap: 8px; margin-top: 14px; }
+    .promo-row input { flex: 1; }
+    .btn-apply { padding: 0 18px; background: var(--purple); border: none; border-radius: 9px; color: #fff; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    .place-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #7c3aed, #f97316); border: none; border-radius: 12px; color: #fff; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 18px; letter-spacing: .04em; transition: opacity .2s, transform .1s; position: relative; overflow: hidden; }
+    .place-btn:hover { opacity: .92; }
+    .place-btn:active { transform: scale(.98); }
+    .place-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .place-btn .spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto; }
+    .place-btn.loading .btn-text { display: none; }
+    .place-btn.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .secure-badges { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+    .badge.green { background: #0a2e0a; color: #86efac; border: 1px solid #1a4d1a; }
+    .badge.blue { background: #0a1a2e; color: #93c5fd; border: 1px solid #1a3a5f; }
+
+    .error-msg { background: #2e0a0a; border: 1px solid var(--danger); border-radius: 8px; color: #fca5a5; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .error-msg.show { display: block; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">Neo-Bazaar</a>
+  <a href="../index.html" class="nav-back">&#8592; Continue Shopping</a>
+</nav>
+
+<div class="progress-bar">
+  <div class="prog-step done"><div class="prog-dot">✓</div> Cart</div>
+  <div class="prog-line"></div>
+  <div class="prog-step active"><div class="prog-dot">2</div> Checkout</div>
+  <div class="prog-line"></div>
+  <div class="prog-step"><div class="prog-dot">3</div> Confirmation</div>
+</div>
+
+<div class="page">
+  <!-- LEFT COLUMN -->
+  <div>
+    <div id="errorMsg" class="error-msg"></div>
+
+    <!-- DELIVERY -->
+    <div class="card">
+      <div class="card-title">Delivery address</div>
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label>Name</label>
+          <div style="background:#0e0c1c;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:14px;color:var(--text);" id="userNameDisplay">—</div>
+          <input type="hidden" id="fname" />
+          <input type="hidden" id="lname" />
+        </div>
+        <div class="form-group span2">
+          <label>Email</label>
+          <div style="background:#0e0c1c;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:14px;color:var(--text);" id="userEmailDisplay">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">💳 Payment will occur only from this account</div>
+          <input type="hidden" id="email" />
+        </div>
+        <div class="form-group span2"><label>Phone</label><input id="phone" placeholder="+91 XXXXX XXXXX" /></div>
+
+          
+          
+        
+        <div class="form-group span2"><label>Address</label><input id="address" placeholder="House no. / Flat / Building / Street / Area" required /></div>
+        <div class="form-group"><label>City</label><input id="city" placeholder="City" required /></div>
+        <div class="form-group"><label>PIN Code</label><input id="pin" placeholder="PIN code" required oninput="updateTotals()" maxlength="6" /></div>
+        <div class="form-group span2">
+          <label>State</label>
+          <select id="state">
+            <option>West Bengal</option><option>Maharashtra</option><option>Karnataka</option>
+            <option>Tamil Nadu</option><option>Delhi</option><option>Gujarat</option>
+            <option>Rajasthan</option><option>Uttar Pradesh</option><option>Telangana</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELIVER FOR SOMEONE ELSE -->
+    <div class="card" id="recipientCard">
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;">
+        <div style="position:relative;width:42px;height:24px;flex-shrink:0;">
+          <input type="checkbox" id="recipientToggle" onchange="toggleRecipient()" style="opacity:0;width:0;height:0;position:absolute;" />
+          <div id="toggleTrack" style="position:absolute;inset:0;background:var(--border);border-radius:99px;transition:background .2s;"></div>
+          <div id="toggleThumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>
+        </div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);">🎁 Deliver for someone else</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Enter recipient's name, address & contact</div>
+        </div>
+      </label>
+
+      <div id="recipientForm" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+        <div class="form-grid">
+          <div class="form-group span2">
+            <label>Recipient Name</label>
+            <input id="recipientName" placeholder="Full name of the recipient" />
+          </div>
+          <div class="form-group span2">
+            <label>Recipient Phone</label>
+            <input id="recipientPhone" placeholder="+91 XXXXX XXXXX" />
+          </div>
+          <div class="form-group span2">
+            <label>Recipient Address</label>
+            <input id="recipientAddress" placeholder="House no. / Flat / Building / Street / Area" />
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input id="recipientCity" placeholder="City" />
+          </div>
+          <div class="form-group">
+            <label>PIN Code</label>
+            <input id="recipientPin" placeholder="PIN code" maxlength="6" />
+          </div>
+          <div class="form-group span2">
+            <label>State</label>
+            <select id="recipientState">
+              <option>West Bengal</option><option>Maharashtra</option><option>Karnataka</option>
+              <option>Tamil Nadu</option><option>Delhi</option><option>Gujarat</option>
+              <option>Rajasthan</option><option>Uttar Pradesh</option><option>Telangana</option>
+              <option>Kerala</option><option>Andhra Pradesh</option><option>Madhya Pradesh</option>
+              <option>Punjab</option><option>Haryana</option><option>Bihar</option>
+              <option>Assam</option><option>Odisha</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px 14px;background:#1a0e2e;border:1px solid #3d2060;border-radius:10px;font-size:12px;color:#c4b5fd;line-height:1.6;">
+          ℹ️ The order will be placed on your account but delivered to the recipient above. Their details will be shown in the admin panel.
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="card">
+      <div class="card-title">Payment method</div>
+      <div class="pay-tabs">
+        <button class="pay-tab active" onclick="setPayment('cod',this)">💵 Cash on Delivery</button>
+        <button class="pay-tab" onclick="setPayment('upi',this)">📱 UPI</button>
+        <button class="pay-tab" onclick="setPayment('card',this)">💳 Card</button>
+      </div>
+
+      <div id="panel-cod" class="pay-panel active">
+        <div class="cod-box">✅ Pay in cash when your order arrives. No advance needed — your order is confirmed instantly!</div>
+      </div>
+
+      <div id="panel-upi" class="pay-panel">
+        <div class="form-group"><label>UPI ID</label><input id="upiId" placeholder="yourname@paytm / @gpay / @ybl" /></div>
+        <div class="upi-apps">
+          <button class="upi-btn" onclick="fillUpi('@paytm')">Paytm</button>
+          <button class="upi-btn" onclick="fillUpi('@okicici')">Google Pay</button>
+          <button class="upi-btn" onclick="fillUpi('@ybl')">PhonePe</button>
+          <button class="upi-btn" onclick="fillUpi('@upi')">BHIM</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px">⚠️ This is a UI demo — no actual UPI payment is processed.</p>
+      </div>
+
+      <div id="panel-card" class="pay-panel">
+        <div class="form-grid">
+          <div class="form-group span2"><label>Card number</label><input id="cardNum" placeholder="XXXX XXXX XXXX XXXX" maxlength="19" oninput="formatCard(this)" /></div>
+          <div class="form-group"><label>Expiry</label><input id="expiry" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)" /></div>
+          <div class="form-group"><label>CVV</label><input id="cvv" placeholder="•••" maxlength="3" type="password" /></div>
+          <div class="form-group span2"><label>Name on card</label><input id="cardName" placeholder="Name as on card" /></div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px">⚠️ This is a UI demo — no actual card payment is processed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: ORDER SUMMARY -->
+  <div>
+    <div class="card" style="position:sticky;top:20px">
+      <div class="card-title">Order summary</div>
+
+      <div id="cartItemsContainer"></div>
+
+      <div style="margin-top:16px">
+        <div class="summary-row"><span>Subtotal</span><span id="subtotalDisplay">₹0</span></div>
+        <div class="summary-row"><span>Delivery</span><span id="deliveryDisplay">Calculating...</span></div>
+        <div class="summary-row" id="discountRow" style="display:none"><span id="discountLabel">Discount</span><span class="red" id="discountDisplay">−₹0</span></div>
+        <div class="summary-row"><span>GST (18%)</span><span id="gstDisplay">₹0</span></div>
+        <div class="summary-row total"><span>Total</span><span class="amt" id="totalDisplay">₹0</span></div>
+      </div>
+
+      <div class="promo-row">
+        <input id="promoInput" placeholder="Promo code" />
+        <button class="btn-apply" onclick="applyPromo()">Apply</button>
+      </div>
+
+      <div id="promoCodeInfo" class="promo-info-box" style="display: none; margin-top: 12px; padding: 12px; border-radius: 8px; border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.08); color: #fca5a5; font-size: 13px; line-height: 1.5;">
+        <div id="promoCodeDescription"></div>
+      </div>
+
+      <button class="place-btn" id="placeBtn" onclick="placeOrder()">
+        <span class="btn-text">Place Order →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="secure-badges">
+        <span class="badge green">✓ SSL Secured</span>
+        <span class="badge blue">Free Returns</span>
+        <span class="badge green">✓ Safe Checkout</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- CART from localStorage ----
+  let cart = [];
+  let selectedPayment = "cod";
+  let discountRate = 0;
+  let deliveryCharge = 0;
+
+    function getDeliveryCharge(pin) {
+    if (!pin || pin.length < 6) return 0;
+    const zone = parseInt(pin.substring(0, 3));
+    // West Bengal (700-743)
+    if (zone >= 700 && zone <= 743) return 49;
+    // East India - Odisha, Bihar, Jharkhand, Assam, NE (754-799, 800-855, 360-396)
+    if ((zone >= 754 && zone <= 799) || (zone >= 800 && zone <= 855)) return 79;
+    // North India - Delhi, UP, Rajasthan, Punjab (110-160, 200-284, 301-345)
+    if ((zone >= 110 && zone <= 160) || (zone >= 200 && zone <= 284) || (zone >= 301 && zone <= 345)) return 99;
+    // West India - Maharashtra, Gujarat (360-445, 400-445)
+    if (zone >= 360 && zone <= 445) return 99;
+    // South India - Karnataka, Tamil Nadu, Kerala, AP, Telangana (500-695)
+    if (zone >= 500 && zone <= 695) return 119;
+    // Remote - NE India, Andaman, J&K (190-199, 744-799)
+    if ((zone >= 190 && zone <= 199) || zone >= 744) return 149;
+    return 99; // default
+  }
+
+  function loadCart() {
+    try {
+      // Supports both {cart:[...]} and plain [...] formats
+      const raw = localStorage.getItem("cart") || localStorage.getItem("neobazaar_cart") || "[]";
+      const parsed = JSON.parse(raw);
+      cart = Array.isArray(parsed) ? parsed : (parsed.cart || []);
+    } catch { cart = []; }
+
+    
+    renderCart();
+  }
+
+  function renderCart() {
+    const container = document.getElementById("cartItemsContainer");
+    container.innerHTML = "";
+
+    cart.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "cart-item";
+      const thumb = item.image
+        ? `<div class="item-thumb"><img src="${item.image}" alt="${item.name}" /></div>`
+        : `<div class="item-thumb">${item.emoji || "📦"}</div>`;
+      div.innerHTML = `
+        ${thumb}
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-qty">Qty: ${item.quantity || 1}</div>
+        </div>
+        <div class="item-price">₹${((item.price) * (item.quantity || 1)).toLocaleString("en-IN")}</div>`;
+      container.appendChild(div);
+    });
+
+    updateTotals();
+  }
+
+  function updateTotals() {
+    const pin = document.getElementById("pin").value.trim();
+    deliveryCharge = getDeliveryCharge(pin);
+
+    const subtotal = cart.reduce((sum, i) => sum + i.price * (i.quantity || 1), 0);
+    const discount = Math.round(subtotal * discountRate);
+    const gst = Math.round((subtotal - discount) * 0.18);
+    const total = subtotal - discount + gst + deliveryCharge;
+
+    const deliveryEl = document.getElementById("deliveryDisplay");
+    if (pin.length === 6) {
+      deliveryEl.textContent = deliveryCharge === 0 ? "FREE" : "₹" + deliveryCharge;
+      deliveryEl.style.color = deliveryCharge === 0 ? "#22c55e" : "#e2deff";
+    } else {
+      deliveryEl.textContent = "Enter PIN";
+      deliveryEl.style.color = "#6b5fa0";
+    }
+
+    document.getElementById("subtotalDisplay").textContent = "₹" + subtotal.toLocaleString("en-IN");
+    const discountRow = document.getElementById("discountRow");
+    if (discount > 0) {
+      discountRow.style.display = "";
+      document.getElementById("discountDisplay").textContent = "−₹" + discount.toLocaleString("en-IN");
+    } else {
+      discountRow.style.display = "none";
+    }
+    document.getElementById("gstDisplay").textContent = "₹" + gst.toLocaleString("en-IN");
+    document.getElementById("totalDisplay").textContent = "₹" + total.toLocaleString("en-IN");
+  }
+
+  function getOrderTotals() {
+    const subtotal = cart.reduce((sum, i) => sum + i.price * (i.quantity || 1), 0);
+    const discount = Math.round(subtotal * discountRate);
+    const gst = Math.round((subtotal - discount) * 0.18);
+    const total = subtotal - discount + gst;
+    return { subtotal, discount, gst, total };
+  }
+
+  function toggleRecipient() {
+    const on = document.getElementById("recipientToggle").checked;
+    document.getElementById("recipientForm").style.display = on ? "block" : "none";
+    document.getElementById("toggleTrack").style.background = on ? "var(--purple)" : "var(--border)";
+    document.getElementById("toggleThumb").style.transform = on ? "translateX(18px)" : "translateX(0)";
+  }
+
+  function setPayment(type, el) {
+    selectedPayment = type;
+    document.querySelectorAll(".pay-tab").forEach(t => t.classList.remove("active"));
+    el.classList.add("active");
+    document.querySelectorAll(".pay-panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("panel-" + type).classList.add("active");
+  }
+
+  function fillUpi(suffix) {
+    const input = document.getElementById("upiId");
+    const base = input.value.split("@")[0] || "yourname";
+    input.value = base + suffix;
+  }
+
+  function formatCard(el) {
+    let v = el.value.replace(/\D/g, "").substring(0, 16);
+    el.value = v.match(/.{1,4}/g)?.join(" ") || v;
+  }
+
+  function formatExpiry(el) {
+    let v = el.value.replace(/\D/g, "").substring(0, 4);
+    if (v.length >= 3) v = v.substring(0, 2) + " / " + v.substring(2);
+    el.value = v;
+  }
+
+  // Get discount codes from API
+  let promoCodesCache = null;
+  
+  async function getPromoCodes() {
+    if (promoCodesCache) return promoCodesCache;
+    
+    try {
+      const res = await fetch('/api/promo-codes');
+      const codes = await res.json();
+      promoCodesCache = codes;
+      return codes;
+    } catch (err) {
+      console.error('Failed to load promo codes:', err);
+      return [];
+    }
+  }
+  
+  // Load promo codes on page load
+  getPromoCodes();
+
+  let appliedPromoCode = '';
+  let appliedPromoData = null;
+
+  async function applyPromo() {
+    const code = document.getElementById("promoInput").value.trim().toUpperCase();
+    const codes = await getPromoCodes();
+    const promo = codes.find(c => c.code === code);
+    const infoBox = document.getElementById("promoCodeInfo");
+    const infoDesc = document.getElementById("promoCodeDescription");
+
+    // Clear previous info
+    infoBox.style.display = "none";
+    infoDesc.innerHTML = "";
+
+    if (!promo) {
+      showError("Invalid promo code. Please check the code and try again.");
+      infoBox.style.borderColor = "#ef4444";
+      infoBox.style.background = "rgba(239, 68, 68, 0.08)";
+      infoBox.style.color = "#fca5a5";
+      infoDesc.innerHTML = "❌ <strong>Code not found:</strong> This promo code does not exist. Please check the code and try again.";
+      infoBox.style.display = "block";
+      return;
+    }
+
+    // Check if code is active
+    if (!promo.active) {
+      showError("This promo code is no longer active");
+      infoBox.style.borderColor = "#ef4444";
+      infoBox.style.background = "rgba(239, 68, 68, 0.08)";
+      infoBox.style.color = "#fca5a5";
+      infoDesc.innerHTML = "❌ <strong>Code expired:</strong> This promo code is no longer active. Please try another code.";
+      infoBox.style.display = "block";
+      return;
+    }
+
+    // Check global usage limit (single-use codes)
+    if (promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit) {
+      showError("This promo code has reached its usage limit");
+      infoBox.style.borderColor = "#ef4444";
+      infoBox.style.background = "rgba(239, 68, 68, 0.08)";
+      infoBox.style.color = "#fca5a5";
+      infoDesc.innerHTML = `❌ <strong>Code limit reached:</strong> This code could only be used ${promo.usageLimit} time(s) and has already been used by other customers. No more uses available.`;
+      infoBox.style.display = "block";
+      return;
+    }
+
+    // Check minimum order amount
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+    if (promo.minAmount > 0 && subtotal < promo.minAmount) {
+      showError(`Minimum order amount ₹${promo.minAmount} required for this code`);
+      infoBox.style.borderColor = "#ef4444";
+      infoBox.style.background = "rgba(239, 68, 68, 0.08)";
+      infoBox.style.color = "#fca5a5";
+      const shortfall = promo.minAmount - subtotal;
+      infoDesc.innerHTML = `⚠️ <strong>Minimum order not met:</strong> This code requires a minimum order of ₹${promo.minAmount}. Your current order is ₹${Math.floor(subtotal)}. Add ₹${Math.ceil(shortfall)} more to qualify.`;
+      infoBox.style.display = "block";
+      return;
+    }
+
+    // Check one-time per account
+    let userEmail = document.getElementById("email").value.trim();
+    if (!userEmail) {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      userEmail = user?.email || "";
+    }
+
+    if (promo.oneTimePerAccount) {
+      if (!userEmail) {
+        showError("Please enter your email address to use this promo code");
+        infoBox.style.borderColor = "#ef4444";
+        infoBox.style.background = "rgba(239, 68, 68, 0.08)";
+        infoBox.style.color = "#fca5a5";
+        infoDesc.innerHTML = "❌ <strong>Email required:</strong> This is a one-time-per-account code. Please enter your email address in the delivery details section.";
+        infoBox.style.display = "block";
+        return;
+      }
+      const usedPromos = JSON.parse(localStorage.getItem(`usedPromos_${userEmail}`) || '[]');
+      if (usedPromos.includes(code)) {
+        showError("You have already used this promo code on your account");
+        infoBox.style.borderColor = "#ef4444";
+        infoBox.style.background = "rgba(239, 68, 68, 0.08)";
+        infoBox.style.color = "#fca5a5";
+        infoDesc.innerHTML = `❌ <strong>Already redeemed:</strong> You have already used this promo code (${code}) on your account (${userEmail}). Each account can only use this code once.`;
+        infoBox.style.display = "block";
+        return;
+      }
+    }
+
+    // Calculate discount rate
+    if (promo.discountType === 'percent') {
+      discountRate = promo.value / 100;
+    } else {
+      discountRate = Math.min(promo.value / subtotal, 1);
+    }
+
+    appliedPromoCode = code;
+    appliedPromoData = promo;
+    const discountLabel = promo.discountType === 'fixed' ? `₹${promo.value} off` : `${promo.value}% off`;
+    const limitInfo = promo.usageLimit > 0 ? ` (Limited: ${promo.usageLimit - promo.usedCount} remaining)` : '';
+    
+    // Show success message with code info
+    showError(`🎉 ${discountLabel} applied!${limitInfo}`, "success");
+    
+    // Show success info box
+    infoBox.style.borderColor = "#1a4d1a";
+    infoBox.style.background = "rgba(10, 46, 10, 0.3)";
+    infoBox.style.color = "#86efac";
+    let infoText = `✓ <strong>${discountLabel} discount applied!</strong><br>`;
+    if (promo.minAmount > 0) infoText += `Minimum order: ₹${promo.minAmount}<br>`;
+    if (promo.usageLimit > 0) infoText += `Uses remaining: ${promo.usageLimit - promo.usedCount}/${promo.usageLimit}<br>`;
+    if (promo.oneTimePerAccount) infoText += `This code can only be used once per account`;
+    infoDesc.innerHTML = infoText;
+    infoBox.style.display = "block";
+    
+    updateTotals();
+    updateDiscountLabel();
+  }
+
+  function updateDiscountLabel() {
+    const label = document.getElementById('discountLabel');
+    if (label && appliedPromoData) {
+      const discountLabel = appliedPromoData.discountType === 'fixed' ? `₹${appliedPromoData.value} off` : `${appliedPromoData.value}% off`;
+      label.textContent = `Discount (${discountLabel})`;
+    }
+  }
+
+  function showError(msg, type = "error") {
+    const el = document.getElementById("errorMsg");
+    el.textContent = msg;
+    el.style.background = type === "success" ? "#0a2e0a" : "#2e0a0a";
+    el.style.borderColor = type === "success" ? "#1a4d1a" : "#ef4444";
+    el.style.color = type === "success" ? "#86efac" : "#fca5a5";
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 4000);
+  }
+
+  async function placeOrder() {
+    const btn = document.getElementById("placeBtn");
+
+    // Validate
+    const fname = document.getElementById("fname").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
+    const city = document.getElementById("city").value.trim();
+    const pin = document.getElementById("pin").value.trim();
+    const state = document.getElementById("state").value;
+
+    if (!email || !phone || !address || !city || !pin) {
+      showError("Please fill in all delivery details.");
+      return;
+    }
+
+    if (!JSON.parse(localStorage.getItem("cart") || "[]").length) {
+      alert("Your cart is empty!");
+      window.location.href = "../index.html";
+    }
+
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    const isRecipient = document.getElementById("recipientToggle").checked;
+    let recipient = null;
+    if (isRecipient) {
+      recipient = {
+        name: document.getElementById("recipientName").value.trim(),
+        phone: document.getElementById("recipientPhone").value.trim(),
+        address: document.getElementById("recipientAddress").value.trim(),
+        city: document.getElementById("recipientCity").value.trim(),
+        pin: document.getElementById("recipientPin").value.trim(),
+        state: document.getElementById("recipientState").value,
+      };
+      if (!recipient.name || !recipient.phone || !recipient.address || !recipient.city || !recipient.pin) {
+        showError("Please fill in all recipient delivery details.");
+        return;
+      }
+    }
+
+    const { subtotal, discount, gst } = getOrderTotals();
+    const total = subtotal - discount + gst + deliveryCharge;
+
+    const deliveryLocation = isRecipient
+      ? `${recipient.address}, ${recipient.city}, ${recipient.state} - ${recipient.pin}`
+      : address + ", " + city + ", " + state + " - " + pin;
+    const deliveryContact = isRecipient ? recipient.phone : phone;
+
+    const orderData = {
+      user: { name: fname + " " + document.getElementById("lname").value.trim(), email, phone, address, city, state, pin },
+      items: cart.map(i => ({ productId: i._id || i.id || "", name: i.name, price: i.price, quantity: i.quantity || 1 })),
+      paymentMethod: selectedPayment,
+      location: deliveryLocation,
+      contactNumber: deliveryContact,
+      subtotal, discount, gst, total,
+      promoCode: appliedPromoCode,
+      ...(recipient ? { recipient } : {})
+    };
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Order failed");
+
+      // Create order object
+      const newOrder = {
+        orderId: data._id || data.orderId,
+        items: cart,
+        subtotal,
+        discount,
+        gst,
+        delivery: deliveryCharge,
+        total,
+        name: orderData.user.name,
+        email: orderData.user.email,
+        paymentMethod: selectedPayment,
+        promoCode: appliedPromoCode,
+        status: data.status || "Placed",
+        createdAt: data.createdAt || new Date().toISOString()
+      };
+      
+      // Save to lastOrder (for backward compatibility)
+      localStorage.setItem("lastOrder", JSON.stringify(newOrder));
+      
+      // Save user info for fetching orders
+      localStorage.setItem("user", JSON.stringify({ 
+        email: orderData.user.email, 
+        username: orderData.user.name 
+      }));
+
+      // Mark promo code as used (for one-time per account tracking)
+      if (appliedPromoCode && orderData.user.email) {
+        const usedPromos = JSON.parse(localStorage.getItem(`usedPromos_${orderData.user.email}`) || '[]');
+        if (!usedPromos.includes(appliedPromoCode)) {
+          usedPromos.push(appliedPromoCode);
+          localStorage.setItem(`usedPromos_${orderData.user.email}`, JSON.stringify(usedPromos));
+        }
+      }
+
+      // Clear cart
+      localStorage.removeItem("cart");
+      localStorage.removeItem("neobazaar_cart");
+
+      // Redirect to success page
+      window.location.href = "order-success.html";
+
+    } catch (err) {
+      showError("❌ " + err.message);
+      btn.classList.remove("loading");
+      btn.disabled = false;
+    }
+  }
+
+  // Autofill email & name from logged-in user
+    const _u = JSON.parse(localStorage.getItem("user") || "null");
+    if (_u) {
+      document.getElementById("userEmailDisplay").textContent = _u.email || "—";
+      document.getElementById("email").value = _u.email || "";
+      const displayName = _u.username || _u.name || "—";
+      document.getElementById("userNameDisplay").textContent = displayName;
+      // Split name into fname/lname hidden fields for backward compat
+      const nameParts = displayName.split(" ");
+      document.getElementById("fname").value = nameParts[0] || displayName;
+      document.getElementById("lname").value = nameParts.slice(1).join(" ") || "";
+    }
+
+    loadCart();
+</script>
+</body>
+</html>

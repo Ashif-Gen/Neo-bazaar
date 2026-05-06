@@ -1,0 +1,165 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Credits - Neo-Bazaar</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .h1:hover{
+        text-decoration-color: w;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: rgb(135, 135, 135);
+      margin-bottom: 40px;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 16px;
+      width: 200px;
+      padding: 28px 20px 20px;
+      text-align: center;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-6px)rotate(0.5deg);
+      border-color: #0072ff;
+      background-color:#393939;
+      scale: 1.07;
+      border-color: hwb(187 0% 0%);
+      text-transform: none;
+      cursor: pointer;
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #0072ff;
+      margin-bottom: 14px;
+
+    }
+
+    .name {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .role {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .founder-badge {
+      display: inline-block;
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Meet The Team</h1>
+  <p class="subtitle">The developers behind Neo-Bazaar 🛒</p>
+
+  <div class="grid">
+
+    <div class="card">
+      <img src="../assets/img/anubhab.jpg" alt="Anubhab" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Anubhab+Sen&background=002a3a&color=fff&size=90'"/>
+      <div class="name">Anubhab Sen</div>
+      <div class="role">Founder & Lead Dev</div>
+      <span class="founder-badge">Leader</span>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/avirup.jpg" alt="Avirup" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Avirup&background=002a3a&color=fff&size=90'"/>
+      <div class="name">Avirup</div>
+      <div class="role">Full stack Developer</div>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/bidisha.jpg" alt="Bidisha" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Bidisha&background=002a3a&color=fff&size=90'"/>
+      <div class="name">Bidisha</div>
+      <div class="role">Auth Developer</div>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/ayesha.jpg" alt="Ayasha" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Ayasha&background=002a3a&color=fff&size=90'"/>
+      <div class="name">Ayesha</div>
+      <div class="role">Full stack Developer</div>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/shebanti.jpg" alt="Shebanti" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Shebanti&background=00303d&color=fff&size=90'"/>
+      <div class="name">Shebanti</div>
+      <div class="role">Admin Dashboard</div>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/ashif.jpg" alt="Ashif" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Ashif&background=022f40&color=fff&size=90'"/>
+      <div class="name">Ashif ali</div>
+      <div class="role">Full stack Developer</div>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/debraj.jpg" alt="Debraj" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Debraj&background=002a3a&color=fff&size=90'"/>
+      <div class="name">Debraj</div>
+      <div class="role">Backend Developer</div>
+    </div>
+
+    <div class="card">
+      <img src="../assets/img/fardeen.jpg" alt="Fardeen" class="avatar"
+           onerror="this.src='https://ui-avatars.com/api/?name=Fardin&background=002333&color=fff&size=90'"/>
+      <div class="name">Fardeen</div>
+      <div class="role">Frontend Developer</div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Product — Neo-Bazaar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #07060f;
+      --bg-secondary: #0f0d1a;
+      --bg-card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text-primary: #f0eeff;
+      --text-secondary: #9b93c4;
+      --text-muted: #5c5480;
+      --nav-bg: rgba(7,6,15,0.88);
+      --chip-bg: rgba(124,58,237,0.18);
+      --chip-border: rgba(124,58,237,0.4);
+    }
+    [data-theme="light"] {
+      --bg-primary: #f8f7ff;
+      --bg-secondary: #ffffff;
+      --bg-card: rgba(0,0,0,0.03);
+      --border: rgba(0,0,0,0.08);
+      --text-primary: #121026;
+      --text-secondary: #5b5480;
+      --text-muted: #918ba8;
+      --nav-bg: rgba(248,247,255,0.92);
+      --chip-bg: rgba(124,58,237,0.1);
+      --chip-border: rgba(124,58,237,0.3);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: background 0.35s, color 0.35s;
+      min-height: 100vh;
+    }
+    h1,h2,h3,.heading { font-family: 'Syne', sans-serif; }
+
+    .mesh-bg {
+      position: fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(circle at 15% 25%, rgba(124,58,237,0.10) 0%, transparent 55%),
+        radial-gradient(circle at 85% 75%, rgba(251,146,60,0.07) 0%, transparent 50%);
+    }
+    .glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+    }
+    nav {
+      position: fixed; top:0; left:0; right:0; z-index:100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+    .grad-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #fb923c 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #fb923c 100%);
+      color: white; font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(124,58,237,0.35);
+    }
+
+    /* ── IMAGE GALLERY ── */
+    .main-img-wrap {
+      border-radius: 20px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      min-height: 340px;
+      position: relative;
+    }
+    [data-theme="light"] .main-img-wrap { background: #fff; }
+    .main-img-wrap img {
+      max-height: 380px;
+      max-width: 100%;
+      object-fit: contain;
+      transition: transform 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    .main-img-wrap:hover img { transform: scale(1.04); }
+
+    .thumb-strip {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .thumb {
+      width: 64px; height: 64px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--bg-secondary);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, transform 0.2s;
+      flex-shrink: 0;
+    }
+    .thumb:hover { transform: translateY(-2px); border-color: rgba(167,139,250,0.5); }
+    .thumb.active { border-color: #a78bfa; box-shadow: 0 0 12px rgba(167,139,250,0.3); }
+    .thumb img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* ── PRODUCT INFO ── */
+    .product-brand-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #a78bfa;
+    }
+    .product-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .price-final {
+      font-size: 1.9rem; font-weight: 800;
+      color: #fb923c;
+    }
+    .price-original {
+      font-size: 1rem; color: var(--text-muted);
+      text-decoration: line-through;
+    }
+    .discount-pill {
+      background: linear-gradient(135deg, #fb923c, #ef4444);
+      color: white; font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px;
+      display: inline-block;
+    }
+
+    /* ── ADD TO CART ── */
+    .cart-btn {
+      background: linear-gradient(135deg, #7c3aed 0%, #fb923c 100%);
+      color: white; font-weight: 700; font-size: 1rem;
+      padding: 14px 32px; border-radius: 14px;
+      border: none; cursor: pointer;
+      width: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .cart-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px rgba(124,58,237,0.35);
+    }
+    .cart-btn:active { transform: translateY(0); }
+
+    /* ── STOCK BADGE ── */
+    .stock-ok { color: #34d399; font-size: 13px; font-weight: 600; }
+    .stock-low { color: #fb923c; font-size: 13px; font-weight: 600; }
+    .stock-out { color: #f87171; font-size: 13px; font-weight: 600; }
+
+    /* ── HIGHLIGHTS ── */
+    .highlight-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+    .highlight-item:last-child { border-bottom: none; }
+    .highlight-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #fb923c);
+      flex-shrink: 0; margin-top: 6px;
+    }
+
+    /* ── SPEC TABLE ── */
+    .spec-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .spec-table tr { border-bottom: 1px solid var(--border); }
+    .spec-table tr:last-child { border-bottom: none; }
+    .spec-table td { padding: 10px 12px; vertical-align: top; }
+    .spec-table td:first-child {
+      color: var(--text-muted); font-weight: 600;
+      width: 40%; white-space: nowrap;
+    }
+    .spec-table td:last-child { color: var(--text-primary); }
+
+    /* ── SECTION CARD ── */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 14px;
+    }
+
+    /* ── CAT TAG ── */
+    .cat-tag {
+      font-size: 10px; padding: 3px 9px;
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: #a78bfa; border-radius: 999px; font-weight: 600;
+    }
+
+    /* ── META INFO PILLS ── */
+    .meta-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 10px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      font-size: 0.8rem; color: var(--text-secondary);
+    }
+    .meta-pill-icon { font-size: 1rem; }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .breadcrumb a:hover { color: #a78bfa; }
+    .breadcrumb span { color: var(--text-primary); font-weight: 600; }
+
+    /* ── SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, rgba(255,255,255,0.06) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 10px;
+    }
+    [data-theme="light"] .skeleton {
+      background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      background: linear-gradient(135deg, #7c3aed, #fb923c);
+      color: white; padding: 11px 20px; border-radius: 14px;
+      font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(124,58,237,0.4);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── DROPDOWN ── */
+    .dropdown-menu {
+      background: rgba(10,8,20,0.97); border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
+    }
+    [data-theme="light"] .dropdown-menu {
+      background: rgba(255,255,255,0.97); border: 1px solid rgba(0,0,0,0.1);
+    }
+    [data-theme="light"] .dropdown-menu a { color: var(--text-primary); }
+
+    /* ── FADE IN ── */
+    .fade-in {
+      opacity: 0; transform: translateY(16px);
+      animation: fadeUp 0.5s ease forwards;
+    }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="mesh-bg"></div>
+
+  <!-- ═══════════ NAVBAR ═══════════ -->
+  <nav class="h-16 flex items-center px-4 md:px-10 gap-4">
+    <a href="../index.html" class="flex items-center gap-2 shrink-0">
+      <img src="../assets/img/NeoB_img.jpeg" class="w-10 h-10 object-contain rounded-lg" onerror="this.style.display='none'">
+      <span class="heading text-lg font-extrabold tracking-tighter grad-text hidden sm:block">Neo-Bazaar</span>
+    </a>
+
+    <div class="ml-auto flex items-center gap-3">
+      <button onclick="toggleTheme()" class="glass px-3 py-1.5 rounded-full text-sm" title="Toggle theme">🌗</button>
+
+      <!-- USER MENU -->
+      <div class="relative group" id="accountMenu">
+        <button id="openAuthBtn" onclick="openAuth('login')" class="btn-primary px-4 py-1.5 rounded-full text-sm">Account</button>
+        <div id="userMenu" class="hidden group">
+          <button class="btn-primary px-4 py-1.5 rounded-full text-sm" id="userEmailBtn">Hi 👋</button>
+          <div class="absolute right-0 top-full pt-2 w-44 z-50">
+            <div class="rounded-xl shadow-xl dropdown-menu overflow-hidden hidden group-hover:block">
+              <p class="px-4 py-2 text-xs text-violet-300 truncate" id="loggedEmail"></p>
+              <hr class="border-white/10">
+              <a href="../pages/orders.html" class="block px-4 py-2 hover:bg-white/10 cursor-pointer text-sm">Orders</a>
+              <a class="block px-4 py-2 hover:bg-white/10 text-red-400 cursor-pointer text-sm" onclick="logout()">Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CART -->
+      <div class="relative cursor-pointer" onclick="goToCart()">
+        <span class="text-xl">🛒</span>
+        <span id="cartCount" class="absolute -top-2 -right-2 bg-orange-500 text-[10px] px-1.5 rounded-full font-bold">0</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════ MAIN CONTENT ═══════════ -->
+  <main class="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-24 pb-16">
+
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb mb-6 fade-in" id="breadcrumb">
+      <a href="../index.html">Home</a>
+      <span style="color:var(--text-muted)">›</span>
+      <a href="search.html" id="backLink">Browse</a>
+      <span style="color:var(--text-muted)">›</span>
+      <span id="breadcrumbName">Loading…</span>
+    </div>
+
+    <!-- SKELETON LOADER -->
+    <div id="skeletonLoader">
+      <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+        <div>
+          <div class="skeleton" style="height:360px; border-radius:20px; margin-bottom:12px;"></div>
+          <div class="flex gap-2">
+            <div class="skeleton" style="width:64px;height:64px;border-radius:12px;"></div>
+            <div class="skeleton" style="width:64px;height:64px;border-radius:12px;"></div>
+            <div class="skeleton" style="width:64px;height:64px;border-radius:12px;"></div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="skeleton" style="height:12px;width:30%;"></div>
+          <div class="skeleton" style="height:32px;width:85%;"></div>
+          <div class="skeleton" style="height:32px;width:70%;"></div>
+          <div class="skeleton" style="height:48px;width:40%;margin-top:8px;"></div>
+          <div class="skeleton" style="height:52px;border-radius:14px;margin-top:16px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT PAGE (hidden until loaded) -->
+    <div id="productPage" class="hidden">
+
+      <!-- TOP GRID: IMAGE + INFO -->
+      <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+
+        <!-- LEFT: IMAGE GALLERY -->
+        <div class="space-y-3 fade-in" style="animation-delay:0.05s">
+          <div class="main-img-wrap" id="mainImgWrap">
+            <img id="mainImg" alt="">
+            <div id="discBadge" class="hidden" style="position:absolute;top:14px;right:14px;"></div>
+          </div>
+          <div class="thumb-strip" id="thumbStrip"></div>
+        </div>
+
+        <!-- RIGHT: INFO -->
+        <div class="space-y-5 fade-in" style="animation-delay:0.1s">
+          <!-- Brand + categories -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="product-brand-label" id="infoGrand"></span>
+            <div id="infoCats" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- Title -->
+          <h1 class="product-title" id="infoName">—</h1>
+
+          <!-- Price -->
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="price-final" id="infoPrice">—</span>
+            <span class="price-original hidden" id="infoOriginal"></span>
+            <span class="discount-pill hidden" id="infoDiscount"></span>
+          </div>
+
+          <!-- Stock -->
+          <div id="infoStock"></div>
+
+          <!-- Meta: Warranty + Return -->
+          <div id="infoMeta" class="flex flex-wrap gap-2"></div>
+
+          <!-- Add to Cart -->
+          <button class="cart-btn" id="cartBtn" onclick="handleAddToCart()">
+            🛒 Add to Cart
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTTOM SECTIONS -->
+      <div id="bottomSections" class="mt-10 space-y-5"></div>
+
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="errorState" class="hidden text-center py-20">
+      <div style="font-size:64px;opacity:0.3;margin-bottom:16px">📦</div>
+      <h2 class="heading text-2xl font-bold" style="color:var(--text-secondary)">Product not found</h2>
+      <p class="text-sm mt-2 mb-6" style="color:var(--text-muted)">This product may have been removed or the link is invalid.</p>
+      <a href="search.html" class="btn-primary px-6 py-2.5 rounded-xl text-sm inline-block">← Back to Search</a>
+    </div>
+
+  </main>
+
+  <!-- TOAST -->
+  <div id="toast">✓ Added to cart!</div>
+
+  <!-- AUTH MODAL (shared with site) -->
+  <div id="authModal" class="fixed inset-0 z-[500] hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div class="glass rounded-2xl w-full max-w-sm mx-4 p-7 shadow-2xl relative">
+      <button onclick="closeAuth()" class="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xl">✕</button>
+      <h2 class="heading text-xl font-bold mb-5">Welcome Back</h2>
+      <div class="flex gap-2 mb-5">
+        <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition btn-primary">Login</button>
+        <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition glass hover:bg-white/10" style="color:var(--text-secondary)">Register</button>
+      </div>
+      <div class="space-y-3">
+        <div id="authUsername" class="hidden">
+          <input id="authUsernameInput" type="text" placeholder="Username" class="w-full rounded-xl px-4 py-3 text-sm outline-none" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary)">
+        </div>
+        <input id="authEmail" type="email" placeholder="Email" class="w-full rounded-xl px-4 py-3 text-sm outline-none" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary)">
+        <input id="authPassword" type="password" placeholder="Password" class="w-full rounded-xl px-4 py-3 text-sm outline-none" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary)">
+        <button onclick="submitAuth()" id="authSubmitBtn" class="btn-primary w-full py-3 rounded-xl text-sm">Login</button>
+        <p id="authMsg" class="hidden text-xs text-center"></p>
+        <p class="text-xs text-center" style="color:var(--text-muted)">
+          <span id="switchHint">Don't have an account?</span>
+          <button id="switchLink" onclick="switchAuthTab('register')" class="text-violet-400 ml-1 underline underline-offset-2">Register</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ════════════════════════════════════════
+       CONFIG
+    ════════════════════════════════════════ */
+    const BASE = '';
+
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    let currentProduct = null;
+    let authMode = 'login';
+
+    /* ════════════════════════════════════════
+       INIT
+    ════════════════════════════════════════ */
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Restore theme
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+
+      // Render cart count
+      renderCartCount();
+
+      // Restore user session
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (user) updateAccountUI(user.email, user.username);
+
+      // Read product id from URL
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (!id) { showError(); return; }
+
+      // Restore back link with search params if present
+      const returnUrl = params.get('from') || 'search.html';
+      document.getElementById('backLink').href = returnUrl;
+
+      await loadProduct(id);
+    });
+
+    /* ════════════════════════════════════════
+       LOAD PRODUCT
+    ════════════════════════════════════════ */
+    async function loadProduct(id) {
+      try {
+        const res = await fetch(`${BASE}/api/products/${id}`);
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+        // API might return { product: {...} } or the product directly
+        currentProduct = data.product || data;
+        renderProduct(currentProduct);
+      } catch {
+        // Fallback: try finding in allProducts via search endpoint
+        try {
+          const res2 = await fetch(`${BASE}/api/products`);
+          const data2 = await res2.json();
+          const list = data2.products || data2;
+          const found = list.find(p => p._id === id);
+          if (!found) throw new Error('not found');
+          currentProduct = found;
+          renderProduct(found);
+        } catch {
+          showError();
+        }
+      }
+    }
+
+    /* ════════════════════════════════════════
+       RENDER PRODUCT
+    ════════════════════════════════════════ */
+    function renderProduct(p) {
+      document.title = `${p.name || 'Product'} — Neo-Bazaar`;
+      document.getElementById('breadcrumbName').textContent = p.name || 'Product';
+
+      // ── Images ──
+      const allImages = [];
+      if (p.image) allImages.push(p.image);
+      if (p.images && Array.isArray(p.images)) {
+        p.images.forEach(img => { if (img && img !== p.image) allImages.push(img); });
+      }
+      if (allImages.length === 0) allImages.push('');
+
+      const mainImg = document.getElementById('mainImg');
+      mainImg.src = allImages[0];
+      mainImg.alt = p.name || '';
+
+      // Discount badge
+      if (p.discount && p.originalPrice) {
+        const badge = document.getElementById('discBadge');
+        badge.innerHTML = `<span style="background:linear-gradient(135deg,#fb923c,#ef4444);color:white;font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;">${p.discount}% OFF</span>`;
+        badge.classList.remove('hidden');
+      }
+
+      // Thumbnails (only if >1 image)
+      const strip = document.getElementById('thumbStrip');
+      if (allImages.length > 1) {
+        strip.innerHTML = allImages.map((src, i) => `
+          <div class="thumb ${i === 0 ? 'active' : ''}" onclick="setMainImg(this, '${escHtml(src)}')">
+            <img src="${escHtml(src)}" onerror="this.outerHTML='<span style=\\'font-size:20px;opacity:0.4\\'>🛍️</span>'">
+          </div>`).join('');
+      }
+
+      // ── Brand + Categories ──
+      if (p.brand) document.getElementById('infoGrand').textContent = p.brand;
+      const cats = (p.categories || []).map(c => typeof c === 'object' ? c.name : c).filter(Boolean);
+      if (cats.length) {
+        document.getElementById('infoCats').innerHTML = cats.map(c =>
+          `<span class="cat-tag">${escHtml(c)}</span>`
+        ).join('');
+      }
+
+      // ── Name ──
+      document.getElementById('infoName').textContent = p.name || 'Unnamed Product';
+
+      // ── Price ──
+      document.getElementById('infoPrice').textContent = `₹${Number(p.price || 0).toLocaleString('en-IN')}`;
+      if (p.originalPrice && p.discount) {
+        const orig = document.getElementById('infoOriginal');
+        const disc = document.getElementById('infoDiscount');
+        orig.textContent = `₹${Number(p.originalPrice).toLocaleString('en-IN')}`;
+        disc.textContent = `${p.discount}% off`;
+        orig.classList.remove('hidden');
+        disc.classList.remove('hidden');
+      }
+
+      // ── Stock ──
+      const stockEl = document.getElementById('infoStock');
+      const qty = Number(p.stock ?? p.quantity ?? -1);
+      if (qty === 0) {
+        stockEl.innerHTML = `<span class="stock-out">✕ Out of stock</span>`;
+        document.getElementById('cartBtn').disabled = true;
+        document.getElementById('cartBtn').style.opacity = '0.5';
+        document.getElementById('cartBtn').style.cursor = 'not-allowed';
+      } else if (qty > 0 && qty <= 5) {
+        stockEl.innerHTML = `<span class="stock-low">⚡ Only ${qty} left in stock</span>`;
+      } else if (qty > 5) {
+        stockEl.innerHTML = `<span class="stock-ok">✓ In stock</span>`;
+      }
+
+      // ── Meta pills (warranty + return policy) ──
+      const metaWrap = document.getElementById('infoMeta');
+      if (p.warranty) {
+        metaWrap.innerHTML += `<div class="meta-pill"><span class="meta-pill-icon">🛡️</span> ${escHtml(p.warranty)}</div>`;
+      }
+      if (p.returnPolicy) {
+        metaWrap.innerHTML += `<div class="meta-pill"><span class="meta-pill-icon">↩️</span> ${escHtml(p.returnPolicy)}</div>`;
+      }
+
+      // ── Bottom Sections ──
+      const bottom = document.getElementById('bottomSections');
+      bottom.innerHTML = '';
+
+      // Description
+      if (p.description && p.description.trim()) {
+        bottom.innerHTML += `
+          <div class="section-card fade-in" style="animation-delay:0.18s">
+            <div class="section-title">About this product</div>
+            <p style="font-size:0.9rem;line-height:1.75;color:var(--text-secondary)">${escHtml(p.description)}</p>
+          </div>`;
+      }
+
+      // Highlights
+      const highlights = p.highlights || p.keyFeatures || [];
+      if (highlights.length) {
+        bottom.innerHTML += `
+          <div class="section-card fade-in" style="animation-delay:0.22s">
+            <div class="section-title">Highlights</div>
+            <div>
+              ${highlights.map(h => `
+                <div class="highlight-item">
+                  <div class="highlight-dot"></div>
+                  <span>${escHtml(h)}</span>
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      // Specs
+      const specs = p.specs || p.specifications || {};
+      const specEntries = Array.isArray(specs)
+        ? specs
+        : Object.entries(specs).map(([k, v]) => ({ key: k, value: v }));
+
+      if (specEntries.length) {
+        bottom.innerHTML += `
+          <div class="section-card fade-in" style="animation-delay:0.26s">
+            <div class="section-title">Specifications</div>
+            <table class="spec-table">
+              ${specEntries.map(s => {
+                const k = s.key || s.name || s.label || '';
+                const v = s.value || s.val || '';
+                return `<tr><td>${escHtml(String(k))}</td><td>${escHtml(String(v))}</td></tr>`;
+              }).join('')}
+            </table>
+          </div>`;
+      }
+
+      // SKU / tags footer
+      const footer = [];
+      if (p.sku) footer.push(`<span style="color:var(--text-muted);font-size:12px;">SKU: <span style="color:var(--text-secondary)">${escHtml(p.sku)}</span></span>`);
+      if (p.tags && p.tags.length) {
+        const tagList = (typeof p.tags === 'string' ? p.tags.split(',') : p.tags).map(t => t.trim()).filter(Boolean);
+        if (tagList.length) {
+          footer.push(`<div class="flex flex-wrap gap-1.5">${tagList.map(t => `<span class="cat-tag" style="font-size:10px;">${escHtml(t)}</span>`).join('')}</div>`);
+        }
+      }
+      if (footer.length) {
+        bottom.innerHTML += `
+          <div class="fade-in flex flex-wrap gap-4 items-center pt-2" style="animation-delay:0.3s">
+            ${footer.join('')}
+          </div>`;
+      }
+
+      // ── Show page ──
+      document.getElementById('skeletonLoader').classList.add('hidden');
+      document.getElementById('productPage').classList.remove('hidden');
+    }
+
+    /* ════════════════════════════════════════
+       IMAGE SWITCH
+    ════════════════════════════════════════ */
+    function setMainImg(thumb, src) {
+      document.getElementById('mainImg').src = src;
+      document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+    }
+
+    /* ════════════════════════════════════════
+       CART
+    ════════════════════════════════════════ */
+    function handleAddToCart() {
+      if (!currentProduct) return;
+      const id = currentProduct._id;
+      const idx = cart.findIndex(c => c._id === id);
+      if (idx > -1) { cart[idx].quantity = (cart[idx].quantity || 1) + 1; }
+      else { cart.push({ ...currentProduct, quantity: 1 }); }
+      localStorage.setItem('cart', JSON.stringify(cart));
+      renderCartCount();
+      showToast();
+    }
+
+    function renderCartCount() {
+      const total = cart.reduce((s, c) => s + (c.quantity || 1), 0);
+      document.getElementById('cartCount').textContent = total;
+    }
+
+    function goToCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      window.location.href = '../pages/cart.html';
+    }
+
+    /* ════════════════════════════════════════
+       TOAST
+    ════════════════════════════════════════ */
+    let toastTimer;
+    function showToast() {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    /* ════════════════════════════════════════
+       THEME
+    ════════════════════════════════════════ */
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    }
+
+    /* ════════════════════════════════════════
+       ERROR
+    ════════════════════════════════════════ */
+    function showError() {
+      document.getElementById('skeletonLoader').classList.add('hidden');
+      document.getElementById('errorState').classList.remove('hidden');
+    }
+
+    /* ════════════════════════════════════════
+       AUTH
+    ════════════════════════════════════════ */
+    function openAuth(mode = 'login') {
+      switchAuthTab(mode);
+      const m = document.getElementById('authModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeAuth() {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('authModal').classList.remove('flex');
+    }
+    function switchAuthTab(mode) {
+      authMode = mode;
+      const isLogin = mode === 'login';
+      document.getElementById('authSubmitBtn').textContent = isLogin ? 'Login' : 'Create Account';
+      const loginBtn = document.getElementById('tabLogin');
+      const regBtn = document.getElementById('tabRegister');
+      loginBtn.className = `flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition ${isLogin ? 'btn-primary' : 'glass hover:bg-white/10'}`;
+      regBtn.className = `flex-1 h-10 rounded-lg font-semibold text-sm flex items-center justify-center transition ${!isLogin ? 'btn-primary' : 'glass hover:bg-white/10'}`;
+      if (!isLogin) regBtn.style.color = ''; else regBtn.style.color = 'var(--text-secondary)';
+      document.getElementById('switchHint').textContent = isLogin ? "Don't have an account?" : 'Already have one?';
+      document.getElementById('switchLink').textContent = isLogin ? 'Register' : 'Login';
+      document.getElementById('switchLink').onclick = () => switchAuthTab(isLogin ? 'register' : 'login');
+      document.getElementById('authMsg').classList.add('hidden');
+      const u = document.getElementById('authUsername');
+      isLogin ? u.classList.add('hidden') : u.classList.remove('hidden');
+    }
+    async function submitAuth() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const username = document.getElementById('authUsernameInput').value.trim();
+      const msgEl = document.getElementById('authMsg');
+      if (!email || !password) { showMsg(msgEl, 'Please fill in all fields.', 'red'); return; }
+      const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+      try {
+        const res = await fetch(`${BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, username })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (authMode === 'login') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            updateAccountUI(data.user.email, data.user.username);
+            closeAuth();
+          } else {
+            showMsg(msgEl, 'Account created! You can now login.', 'green');
+            setTimeout(() => switchAuthTab('login'), 1500);
+          }
+        } else {
+          showMsg(msgEl, data.message || 'Something went wrong.', 'red');
+        }
+      } catch {
+        showMsg(msgEl, 'Server not reachable.', 'red');
+      }
+    }
+    function logout() {
+      localStorage.removeItem('user');
+      updateAccountUI(null);
+    }
+    function updateAccountUI(email, username) {
+      const openBtn = document.getElementById('openAuthBtn');
+      const userMenu = document.getElementById('userMenu');
+      if (email) {
+        openBtn.classList.add('hidden');
+        userMenu.classList.remove('hidden');
+        document.getElementById('loggedEmail').textContent = email;
+        document.getElementById('userEmailBtn').textContent = username || email;
+      } else {
+        openBtn.classList.remove('hidden');
+        userMenu.classList.add('hidden');
+      }
+    }
+
+    /* ════════════════════════════════════════
+       HELPERS
+    ════════════════════════════════════════ */
+    function showMsg(el, text, color) {
+      el.textContent = text;
+      el.className = `text-xs text-center ${color === 'green' ? 'text-green-400' : 'text-red-400'}`;
+      el.classList.remove('hidden');
+    }
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
