@@ -1094,20 +1094,15 @@ app.use((err, req, res, next) => {
 /* =========================
    SERVER START
 ========================= */
-const express = require("express");
-const mongoose = require("mongoose");
+{
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
+  ]
+}
 
-const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 5000;
 
-// connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI);
-
-// sample route
-app.get("/api/hello", (req, res) => {
-  res.json({ message: "Hello from Vercel + MongoDB!" });
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
-
-// IMPORTANT: export app, no app.listen()
-module.exports = app;
 
