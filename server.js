@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const mongoose = require("mongoose");
@@ -10,10 +8,11 @@ const multer = require("multer");
 const fs = require("fs");
 const https = require("https");
 
-// ❌ REMOVED: dns.setServers(['1.1.1.1','8.8.8.8'])
-// This interfered with Vercel's internal DNS used to resolve MongoDB Atlas hostnames.
-
 const app = express();
+
+/* =========================
+   STATIC FILES
+========================= */
 app.use(express.static(__dirname, {
   etag: false,
   lastModified: false,
@@ -31,13 +30,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Log all requests for debugging
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-/* Serve frontend */
 app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
 
@@ -47,66 +44,40 @@ app.use('/uploads', express.static('uploads'));
    Files are ephemeral — migrate to Cloudinary/S3 for persistence.
 ========================= */
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, '/tmp');
-  },
+  destination: (req, file, cb) => cb(null, '/tmp'),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5 MB
 
 /* =========================
    DATABASE — connection caching for serverless
 ========================= */
-
-// ✅ FIX: Use a cached promise instead of a simple boolean flag.
-// A plain `isConnected = true` flag is unreliable in serverless because:
-//  - The connection can drop between warm invocations.
-//  - Multiple concurrent cold-start requests can race past the flag check.
-let connectionPromise = null;
+let isConnected = false;
 
 async function connectDB() {
-  // ✅ FIX: Check mongoose.connection.readyState (1 = connected) instead of a stale boolean.
-  if (mongoose.connection.readyState === 1) return;
+  if (isConnected) return;
 
-  // If a connection attempt is already in-flight, wait for it instead of creating a second one.
-  if (connectionPromise) return connectionPromise;
+  await mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+    bufferCommands: false,
+  });
 
-  connectionPromise = mongoose
-    .connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 10000, // Give Atlas 10 s to respond
-      connectTimeoutMS:         10000, // ✅ NEW: TCP connect timeout
-      socketTimeoutMS:          45000, // ✅ NEW: Keep alive under Vercel's 60 s function limit
-      bufferCommands:           false, // Don't buffer queries — fail fast if not connected
-    })
-    .then(async () => {
-      connectionPromise = null;
-      console.log("MongoDB Connected");
+  isConnected = true;
+  console.log("MongoDB Connected");
 
-      // Initialize admin if it doesn't exist
-      if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-        const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
-        if (!existingAdmin) {
-          const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-          const admin = new Admin({
-            email: process.env.ADMIN_EMAIL,
-            password: hashedPassword
-          });
-          await admin.save();
-          console.log("✅ Admin account created:", process.env.ADMIN_EMAIL);
-        } else {
-          console.log("✅ Admin account already exists");
-        }
-      }
-    })
-    .catch((err) => {
-      connectionPromise = null; // Allow retry on next request
-      throw err;
-    });
-
-  return connectionPromise;
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      await new Admin({ email: process.env.ADMIN_EMAIL, password: hashedPassword }).save();
+      console.log("✅ Admin account created:", process.env.ADMIN_EMAIL);
+    } else {
+      console.log("✅ Admin account already exists");
+    }
+  }
 }
 
 // Connect before every request (no-op if already connected)
@@ -115,8 +86,8 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
-    console.error("DB connection error:", err.message);
-    res.status(500).json({ success: false, message: "Database connection failed", detail: err.message });
+    console.error("DB connection error:", err);
+    res.status(500).json({ success: false, message: "Database connection failed" });
   }
 });
 
@@ -215,25 +186,25 @@ const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 
 // USER PROMO USAGE
 const userPromoUsageSchema = new mongoose.Schema({
-  email: { type: String, required: true, index: true },
+  email:     { type: String, required: true, index: true },
   promoCode: { type: String, required: true },
-  orderId: { type: String, required: true },
-  usedAt: { type: Date, default: Date.now }
+  orderId:   { type: String, required: true },
+  usedAt:    { type: Date, default: Date.now }
 }, { timestamps: true });
 
 const UserPromoUsage = mongoose.models.UserPromoUsage || mongoose.model("UserPromoUsage", userPromoUsageSchema);
 
 // PROMO CODE
 const promoCodeSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true, uppercase: true },
-  discountType: { type: String, enum: ['percent', 'fixed'], default: 'percent' },
-  value: { type: Number, required: true, min: 1 },
-  minAmount: { type: Number, default: 0 },
-  usageLimit: { type: Number, default: 0 },
-  usedCount: { type: Number, default: 0 },
-  oneTimePerAccount: { type: Boolean, default: false },
-  desc: { type: String, default: '' },
-  active: { type: Boolean, default: true }
+  code:               { type: String, required: true, unique: true, uppercase: true },
+  discountType:       { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+  value:              { type: Number, required: true, min: 1 },
+  minAmount:          { type: Number, default: 0 },
+  usageLimit:         { type: Number, default: 0 },
+  usedCount:          { type: Number, default: 0 },
+  oneTimePerAccount:  { type: Boolean, default: false },
+  desc:               { type: String, default: '' },
+  active:             { type: Boolean, default: true }
 }, { timestamps: true });
 
 const PromoCode = mongoose.models.PromoCode || mongoose.model("PromoCode", promoCodeSchema);
@@ -252,10 +223,7 @@ const adminAuth = async (req, res, next) => {
     const parts = authHeader.split(" ");
 
     if (parts.length !== 2 || parts[0] !== "Bearer") {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid authorization format"
-      });
+      return res.status(401).json({ success: false, message: "Invalid authorization format" });
     }
 
     const token = parts[1];
@@ -272,7 +240,6 @@ const adminAuth = async (req, res, next) => {
 
     req.admin = decoded;
     next();
-
   } catch (err) {
     return res.status(401).json({ success: false, message: "Invalid token" });
   }
@@ -326,7 +293,6 @@ app.post("/api/register", async (req, res) => {
     await user.save();
 
     res.json({ success: true, message: "User created", user: { email, username, id: user._id } });
-
   } catch (err) {
     if (err.code === 11000) {
       return res.status(400).json({ success: false, message: "Email already registered" });
@@ -337,28 +303,24 @@ app.post("/api/register", async (req, res) => {
 
 // LOGIN
 app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.json({ success: false, message: "User not found" });
-    }
-
-    const match = await bcrypt.compare(password, user.password);
-
-    if (!match) {
-      return res.json({ success: false, message: "Wrong password" });
-    }
-
-    res.json({
-      success: true,
-      user: { email: user.email, username: user.username, id: user._id }
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Login failed" });
+  if (!user) {
+    return res.json({ success: false, message: "User not found" });
   }
+
+  const match = await bcrypt.compare(password, user.password);
+
+  if (!match) {
+    return res.json({ success: false, message: "Wrong password" });
+  }
+
+  res.json({
+    success: true,
+    user: { email: user.email, username: user.username, id: user._id }
+  });
 });
 
 /* =========================
@@ -402,16 +364,10 @@ app.get("/api/admin/verify", adminAuth, async (req, res) => {
    PRODUCTS
 ========================= */
 
-// ✅ FIX: GET ALL PRODUCTS — added try/catch (was missing entirely!)
-// Without this, any DB error causes the request to hang forever on Vercel.
+// GET ALL PRODUCTS
 app.get("/api/products", async (req, res) => {
-  try {
-    const products = await Product.find().populate('categories', 'name subcategories');
-    res.json(products);
-  } catch (err) {
-    console.error("❌ GET /api/products error:", err.message);
-    res.status(500).json({ success: false, error: "Failed to load products", detail: err.message });
-  }
+  const products = await Product.find().populate('categories', 'name subcategories');
+  res.json(products);
 });
 
 // GET FLASH PRODUCTS (discount >= 50%)
@@ -425,7 +381,6 @@ app.get("/api/products/flash", async (req, res) => {
     const all = [...featuredTagged, ...regular].sort((a, b) => (b.discount || 0) - (a.discount || 0));
     res.json(all);
   } catch (err) {
-    console.error("❌ GET /api/products/flash error:", err.message);
     res.status(500).json([]);
   }
 });
@@ -435,8 +390,7 @@ app.get("/api/products/newest", async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 }).limit(8);
     res.json(products);
-  } catch (err) {
-    console.error("❌ GET /api/products/newest error:", err.message);
+  } catch {
     res.status(500).json([]);
   }
 });
@@ -488,7 +442,6 @@ app.post("/api/products", adminAuth, async (req, res) => {
     });
 
     res.json({ success: true, productId: product._id });
-
   } catch (err) {
     console.error("Add product error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -569,8 +522,7 @@ app.get("/api/featured-products", async (req, res) => {
   try {
     const products = await FeaturedProduct.find().sort({ createdAt: -1 });
     res.json(products);
-  } catch (err) {
-    console.error("❌ GET /api/featured-products error:", err.message);
+  } catch {
     res.status(500).json([]);
   }
 });
@@ -792,7 +744,7 @@ app.get("/api/complaints", adminAuth, async (req, res) => {
   try {
     const data = await Complaint.find().sort({ createdAt: -1 });
     res.json(data);
-  } catch (err) {
+  } catch {
     res.status(500).json([]);
   }
 });
@@ -808,7 +760,7 @@ app.post("/api/complaints", async (req, res) => {
 
     await Complaint.create({ email, message });
     res.json({ success: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false });
   }
 });
@@ -843,7 +795,6 @@ app.post("/api/orders", async (req, res) => {
   try {
     const { promoCode, user } = req.body;
 
-    // Validate promo code if provided
     if (promoCode) {
       const promo = await PromoCode.findOne({ code: promoCode.toUpperCase(), active: true });
 
@@ -876,7 +827,6 @@ app.post("/api/orders", async (req, res) => {
 
     const order = await Order.create(req.body);
 
-    // Track promo code usage
     if (promoCode && order) {
       const promo = await PromoCode.findOne({ code: promoCode.toUpperCase() });
       if (promo) {
@@ -992,12 +942,12 @@ app.post("/api/promo-codes", adminAuth, async (req, res) => {
 
     const promoCode = await PromoCode.create({
       code: code.toUpperCase(),
-      discountType: discountType || 'percent',
+      discountType:      discountType      || 'percent',
       value,
-      minAmount:          minAmount          || 0,
-      desc:               desc               || '',
-      usageLimit:         usageLimit         !== undefined ? usageLimit : 0,
-      oneTimePerAccount:  oneTimePerAccount  || false
+      minAmount:         minAmount         || 0,
+      desc:              desc              || '',
+      usageLimit:        usageLimit        !== undefined ? usageLimit : 0,
+      oneTimePerAccount: oneTimePerAccount || false
     });
 
     res.json({ success: true, promoCode });
@@ -1015,13 +965,13 @@ app.put("/api/promo-codes/:id", adminAuth, async (req, res) => {
   try {
     const { discountType, value, minAmount, desc, active, usageLimit, oneTimePerAccount } = req.body;
     const updateData = {};
-    if (discountType       !== undefined) updateData.discountType      = discountType;
-    if (value              !== undefined) updateData.value             = value;
-    if (minAmount          !== undefined) updateData.minAmount         = minAmount;
-    if (desc               !== undefined) updateData.desc              = desc;
-    if (active             !== undefined) updateData.active            = active;
-    if (usageLimit         !== undefined) updateData.usageLimit        = usageLimit;
-    if (oneTimePerAccount  !== undefined) updateData.oneTimePerAccount = oneTimePerAccount;
+    if (discountType      !== undefined) updateData.discountType      = discountType;
+    if (value             !== undefined) updateData.value             = value;
+    if (minAmount         !== undefined) updateData.minAmount         = minAmount;
+    if (desc              !== undefined) updateData.desc              = desc;
+    if (active            !== undefined) updateData.active            = active;
+    if (usageLimit        !== undefined) updateData.usageLimit        = usageLimit;
+    if (oneTimePerAccount !== undefined) updateData.oneTimePerAccount = oneTimePerAccount;
 
     const promoCode = await PromoCode.findByIdAndUpdate(
       req.params.id,
@@ -1119,16 +1069,6 @@ app.use((err, req, res, next) => {
 });
 
 /* =========================
-   SERVER START
+   EXPORT — Vercel serverless + local dev
 ========================= */
-
-// Local development: start the server normally
-// Vercel: export the app as a serverless function
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
-  });
-}
-
 module.exports = app;
