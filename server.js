@@ -9,9 +9,9 @@ const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const https = require("https");
-const dns = require('dns');
 
-dns.setServers(['1.1.1.1','8.8.8.8']);
+// ❌ REMOVED: dns.setServers(['1.1.1.1','8.8.8.8'])
+// This interfered with Vercel's internal DNS used to resolve MongoDB Atlas hostnames.
 
 const app = express();
 app.use(express.static(__dirname, {
@@ -60,34 +60,53 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5M
 /* =========================
    DATABASE — connection caching for serverless
 ========================= */
-let isConnected = false;
+
+// ✅ FIX: Use a cached promise instead of a simple boolean flag.
+// A plain `isConnected = true` flag is unreliable in serverless because:
+//  - The connection can drop between warm invocations.
+//  - Multiple concurrent cold-start requests can race past the flag check.
+let connectionPromise = null;
 
 async function connectDB() {
-  if (isConnected) return;
+  // ✅ FIX: Check mongoose.connection.readyState (1 = connected) instead of a stale boolean.
+  if (mongoose.connection.readyState === 1) return;
 
-  await mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 10000,
-    bufferCommands: false,
-  });
+  // If a connection attempt is already in-flight, wait for it instead of creating a second one.
+  if (connectionPromise) return connectionPromise;
 
-  isConnected = true;
-  console.log("MongoDB Connected");
+  connectionPromise = mongoose
+    .connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000, // Give Atlas 10 s to respond
+      connectTimeoutMS:         10000, // ✅ NEW: TCP connect timeout
+      socketTimeoutMS:          45000, // ✅ NEW: Keep alive under Vercel's 60 s function limit
+      bufferCommands:           false, // Don't buffer queries — fail fast if not connected
+    })
+    .then(async () => {
+      connectionPromise = null;
+      console.log("MongoDB Connected");
 
-  // Initialize admin if it doesn't exist
-  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
-    if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-      const admin = new Admin({
-        email: process.env.ADMIN_EMAIL,
-        password: hashedPassword
-      });
-      await admin.save();
-      console.log("✅ Admin account created:", process.env.ADMIN_EMAIL);
-    } else {
-      console.log("✅ Admin account already exists");
-    }
-  }
+      // Initialize admin if it doesn't exist
+      if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+        const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
+        if (!existingAdmin) {
+          const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+          const admin = new Admin({
+            email: process.env.ADMIN_EMAIL,
+            password: hashedPassword
+          });
+          await admin.save();
+          console.log("✅ Admin account created:", process.env.ADMIN_EMAIL);
+        } else {
+          console.log("✅ Admin account already exists");
+        }
+      }
+    })
+    .catch((err) => {
+      connectionPromise = null; // Allow retry on next request
+      throw err;
+    });
+
+  return connectionPromise;
 }
 
 // Connect before every request (no-op if already connected)
@@ -96,8 +115,8 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
-    console.error("DB connection error:", err);
-    res.status(500).json({ success: false, message: "Database connection failed" });
+    console.error("DB connection error:", err.message);
+    res.status(500).json({ success: false, message: "Database connection failed", detail: err.message });
   }
 });
 
@@ -318,24 +337,28 @@ app.post("/api/register", async (req, res) => {
 
 // LOGIN
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
-  if (!user) {
-    return res.json({ success: false, message: "User not found" });
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.json({ success: false, message: "Wrong password" });
+    }
+
+    res.json({
+      success: true,
+      user: { email: user.email, username: user.username, id: user._id }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Login failed" });
   }
-
-  const match = await bcrypt.compare(password, user.password);
-
-  if (!match) {
-    return res.json({ success: false, message: "Wrong password" });
-  }
-
-  res.json({
-    success: true,
-    user: { email: user.email, username: user.username, id: user._id }
-  });
 });
 
 /* =========================
@@ -379,10 +402,16 @@ app.get("/api/admin/verify", adminAuth, async (req, res) => {
    PRODUCTS
 ========================= */
 
-// GET ALL PRODUCTS
+// ✅ FIX: GET ALL PRODUCTS — added try/catch (was missing entirely!)
+// Without this, any DB error causes the request to hang forever on Vercel.
 app.get("/api/products", async (req, res) => {
-  const products = await Product.find().populate('categories', 'name subcategories');
-  res.json(products);
+  try {
+    const products = await Product.find().populate('categories', 'name subcategories');
+    res.json(products);
+  } catch (err) {
+    console.error("❌ GET /api/products error:", err.message);
+    res.status(500).json({ success: false, error: "Failed to load products", detail: err.message });
+  }
 });
 
 // GET FLASH PRODUCTS (discount >= 50%)
@@ -396,6 +425,7 @@ app.get("/api/products/flash", async (req, res) => {
     const all = [...featuredTagged, ...regular].sort((a, b) => (b.discount || 0) - (a.discount || 0));
     res.json(all);
   } catch (err) {
+    console.error("❌ GET /api/products/flash error:", err.message);
     res.status(500).json([]);
   }
 });
@@ -405,7 +435,8 @@ app.get("/api/products/newest", async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 }).limit(8);
     res.json(products);
-  } catch {
+  } catch (err) {
+    console.error("❌ GET /api/products/newest error:", err.message);
     res.status(500).json([]);
   }
 });
@@ -538,7 +569,8 @@ app.get("/api/featured-products", async (req, res) => {
   try {
     const products = await FeaturedProduct.find().sort({ createdAt: -1 });
     res.json(products);
-  } catch {
+  } catch (err) {
+    console.error("❌ GET /api/featured-products error:", err.message);
     res.status(500).json([]);
   }
 });
@@ -760,7 +792,7 @@ app.get("/api/complaints", adminAuth, async (req, res) => {
   try {
     const data = await Complaint.find().sort({ createdAt: -1 });
     res.json(data);
-  } catch {
+  } catch (err) {
     res.status(500).json([]);
   }
 });
@@ -776,7 +808,7 @@ app.post("/api/complaints", async (req, res) => {
 
     await Complaint.create({ email, message });
     res.json({ success: true });
-  } catch {
+  } catch (err) {
     res.status(500).json({ success: false });
   }
 });
