@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Log all requests for debugging (BEFORE static middleware)
+// Log all requests for debugging
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
@@ -43,10 +43,12 @@ app.use('/uploads', express.static('uploads'));
 
 /* =========================
    FILE UPLOAD
+   NOTE: /tmp is the only writable dir on Vercel.
+   Files are ephemeral — migrate to Cloudinary/S3 for persistence.
 ========================= */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, '/tmp');
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -56,20 +58,29 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
 
 /* =========================
-   DATABASE
+   DATABASE — connection caching for serverless
 ========================= */
-mongoose.connect(process.env.MONGO_URI)
-.then(async () => {
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected) return;
+
+  await mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,
+    bufferCommands: false,
+  });
+
+  isConnected = true;
   console.log("MongoDB Connected");
-  
+
   // Initialize admin if it doesn't exist
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
     if (!existingAdmin) {
       const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-      const admin = new Admin({ 
-        email: process.env.ADMIN_EMAIL, 
-        password: hashedPassword 
+      const admin = new Admin({
+        email: process.env.ADMIN_EMAIL,
+        password: hashedPassword
       });
       await admin.save();
       console.log("✅ Admin account created:", process.env.ADMIN_EMAIL);
@@ -77,8 +88,18 @@ mongoose.connect(process.env.MONGO_URI)
       console.log("✅ Admin account already exists");
     }
   }
-})
-.catch(err => console.log("DB Error:", err));
+}
+
+// Connect before every request (no-op if already connected)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection error:", err);
+    res.status(500).json({ success: false, message: "Database connection failed" });
+  }
+});
 
 /* =========================
    MODELS
@@ -92,13 +113,12 @@ const productSchema = new mongoose.Schema({
   discount: Number,
   brand: String,
   image: String,
-  images: [{ type: String }],                // Additional gallery images
+  images: [{ type: String }],
   categories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
   selectedSubcategories: [{ type: String }],
-  // Rich product detail fields
   description: { type: String, default: '' },
-  highlights: [{ type: String }],            // Short bullet-point features
-  specifications: [{                         // Key-value spec table
+  highlights: [{ type: String }],
+  specifications: [{
     key:   { type: String },
     value: { type: String }
   }],
@@ -109,7 +129,7 @@ const productSchema = new mongoose.Schema({
   returnPolicy: { type: String, default: '' }
 }, { timestamps: true });
 
-const Product = mongoose.model("Product", productSchema);
+const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
 
 // FEATURED PRODUCT
 const featuredProductSchema = new mongoose.Schema({
@@ -121,7 +141,7 @@ const featuredProductSchema = new mongoose.Schema({
   image: String
 }, { timestamps: true });
 
-const FeaturedProduct = mongoose.model("FeaturedProduct", featuredProductSchema);
+const FeaturedProduct = mongoose.models.FeaturedProduct || mongoose.model("FeaturedProduct", featuredProductSchema);
 
 // CATEGORY
 const categorySchema = new mongoose.Schema({
@@ -129,16 +149,16 @@ const categorySchema = new mongoose.Schema({
   subcategories: [{ type: String, trim: true }]
 }, { timestamps: true });
 
-const Category = mongoose.model("Category", categorySchema);
+const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
 
 // USER
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
-  username: String   // ← add this
+  username: String
 }, { timestamps: true });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 // ADMIN
 const adminSchema = new mongoose.Schema({
@@ -146,7 +166,7 @@ const adminSchema = new mongoose.Schema({
   password: String
 }, { timestamps: true });
 
-const Admin = mongoose.model("Admin", adminSchema);
+const Admin = mongoose.models.Admin || mongoose.model("Admin", adminSchema);
 
 // COMPLAINT
 const complaintSchema = new mongoose.Schema({
@@ -155,13 +175,53 @@ const complaintSchema = new mongoose.Schema({
   resolved: { type: Boolean, default: false }
 }, { timestamps: true });
 
-const Complaint = mongoose.model("Complaint", complaintSchema);
+const Complaint = mongoose.models.Complaint || mongoose.model("Complaint", complaintSchema);
+
+// ORDER
+const orderSchema = new mongoose.Schema({
+  user: mongoose.Schema.Types.Mixed,
+  items: mongoose.Schema.Types.Mixed,
+  subtotal: Number,
+  discount: Number,
+  gst: Number,
+  total: Number,
+  paymentMethod: String,
+  location: String,
+  contactNumber: String,
+  promoCode: String,
+  status: { type: String, default: "Placed" }
+}, { timestamps: true, strict: false });
+
+const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
+
+// USER PROMO USAGE
+const userPromoUsageSchema = new mongoose.Schema({
+  email: { type: String, required: true, index: true },
+  promoCode: { type: String, required: true },
+  orderId: { type: String, required: true },
+  usedAt: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const UserPromoUsage = mongoose.models.UserPromoUsage || mongoose.model("UserPromoUsage", userPromoUsageSchema);
+
+// PROMO CODE
+const promoCodeSchema = new mongoose.Schema({
+  code: { type: String, required: true, unique: true, uppercase: true },
+  discountType: { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+  value: { type: Number, required: true, min: 1 },
+  minAmount: { type: Number, default: 0 },
+  usageLimit: { type: Number, default: 0 },
+  usedCount: { type: Number, default: 0 },
+  oneTimePerAccount: { type: Boolean, default: false },
+  desc: { type: String, default: '' },
+  active: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const PromoCode = mongoose.models.PromoCode || mongoose.model("PromoCode", promoCodeSchema);
 
 /* =========================
-   MIDDLEWARE
+   ADMIN AUTH MIDDLEWARE
 ========================= */
-
-// Admin authentication middleware
 const adminAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -172,22 +232,20 @@ const adminAuth = async (req, res, next) => {
 
     const parts = authHeader.split(" ");
 
-if (parts.length !== 2 || parts[0] !== "Bearer") {
-  return res.status(401).json({ 
-    success: false, 
-    message: "Invalid authorization format" 
-  });
-}
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authorization format"
+      });
+    }
 
-const token = parts[1];
-
+    const token = parts[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (decoded.role !== "admin") {
       return res.status(403).json({ success: false, message: "Admins only" });
     }
 
-    // Verify admin still exists in database
     const admin = await Admin.findById(decoded.id);
     if (!admin) {
       return res.status(403).json({ success: false, message: "Admin no longer exists" });
@@ -212,9 +270,11 @@ app.get("/", (req, res) => {
   res.setHeader("Expires", "0");
   res.sendFile(path.join(__dirname, "index.html"));
 });
+
 app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "pages", "admin.html"));
 });
+
 app.get("/pages/:page", (req, res) => {
   const page = req.params.page;
   const validPages = ['admin', 'products', 'complaints', 'orders', 'product', 'cart', 'checkout', 'orders', 'order-success', 'credits', 'search'];
@@ -243,9 +303,7 @@ app.post("/api/register", async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-
     const user = new User({ email, password: hashed, username });
-
     await user.save();
 
     res.json({ success: true, message: "User created", user: { email, username, id: user._id } });
@@ -279,10 +337,12 @@ app.post("/api/login", async (req, res) => {
     user: { email: user.email, username: user.username, id: user._id }
   });
 });
+
 /* =========================
    ADMIN AUTH
 ========================= */
-// ADMIN LOGIN ENDPOINT
+
+// ADMIN LOGIN
 app.post("/api/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -310,7 +370,7 @@ app.post("/api/admin/login", async (req, res) => {
   }
 });
 
-// ADMIN VERIFY ENDPOINT (for checking if user is admin)
+// ADMIN VERIFY
 app.get("/api/admin/verify", adminAuth, async (req, res) => {
   res.json({ success: true, admin: req.admin });
 });
@@ -325,7 +385,7 @@ app.get("/api/products", async (req, res) => {
   res.json(products);
 });
 
-// GET FLASH PRODUCTS (discount >= 50%, from both regular and featured collections)
+// GET FLASH PRODUCTS (discount >= 50%)
 app.get("/api/products/flash", async (req, res) => {
   try {
     const [regular, featured] = await Promise.all([
@@ -340,7 +400,7 @@ app.get("/api/products/flash", async (req, res) => {
   }
 });
 
-// GET NEWEST PRODUCTS (latest 8 by createdAt)
+// GET NEWEST PRODUCTS
 app.get("/api/products/newest", async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 }).limit(8);
@@ -350,17 +410,13 @@ app.get("/api/products/newest", async (req, res) => {
   }
 });
 
-// GET SINGLE PRODUCT BY ID - checks both Products and FeaturedProducts
+// GET SINGLE PRODUCT BY ID
 app.get("/api/products/:id", async (req, res) => {
   try {
-    // Try Products collection first
     let product = await Product.findById(req.params.id).populate('categories', 'name subcategories');
-    
-    // If not found, try FeaturedProducts collection
     if (!product) {
       product = await FeaturedProduct.findById(req.params.id);
     }
-    
     if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {
@@ -369,8 +425,8 @@ app.get("/api/products/:id", async (req, res) => {
 });
 
 // ADMIN ADD PRODUCT
-app.post("/api/products", adminAuth, async(req,res)=>{
-  try{
+app.post("/api/products", adminAuth, async (req, res) => {
+  try {
     const {
       name, brand, price, image, images,
       originalPrice, discount, categories,
@@ -378,33 +434,33 @@ app.post("/api/products", adminAuth, async(req,res)=>{
       sku, stock, tags, warranty, returnPolicy
     } = req.body;
 
-    if(!name || !brand || !price || !image){
-      return res.status(400).json({success:false, message: "Missing required fields"});
+    if (!name || !brand || !price || !image) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
     const product = await Product.create({
       name, brand,
-      price:         Number(price),
+      price:          Number(price),
       image,
-      images:        images        || [],
-      originalPrice: originalPrice ? Number(originalPrice) : undefined,
-      discount:      discount      ? Number(discount)      : undefined,
-      categories:    categories    || [],
-      description:   description   || '',
-      highlights:    highlights    || [],
+      images:         images         || [],
+      originalPrice:  originalPrice  ? Number(originalPrice) : undefined,
+      discount:       discount       ? Number(discount)      : undefined,
+      categories:     categories     || [],
+      description:    description    || '',
+      highlights:     highlights     || [],
       specifications: specifications || [],
-      sku:           sku           || '',
-      stock:         stock !== undefined ? Number(stock) : 0,
-      tags:          tags          || [],
-      warranty:      warranty      || '',
-      returnPolicy:  returnPolicy  || ''
+      sku:            sku            || '',
+      stock:          stock !== undefined ? Number(stock) : 0,
+      tags:           tags           || [],
+      warranty:       warranty       || '',
+      returnPolicy:   returnPolicy   || ''
     });
-    
-    res.json({success:true, productId: product._id});
 
-  }catch(err){
+    res.json({ success: true, productId: product._id });
+
+  } catch (err) {
     console.error("Add product error:", err);
-    res.status(500).json({success:false, message: "Server error"});
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
@@ -419,28 +475,28 @@ app.put("/api/products/:id", adminAuth, async (req, res) => {
     } = req.body;
 
     const updateData = {};
-    if (name          !== undefined) updateData.name          = name;
-    if (brand         !== undefined) updateData.brand         = brand;
-    if (price         !== undefined) updateData.price         = Number(price);
-    if (image         !== undefined) updateData.image         = image;
-    if (images        !== undefined) updateData.images        = images;
-    if (originalPrice !== undefined) updateData.originalPrice = originalPrice !== '' ? Number(originalPrice) : undefined;
-    if (discount      !== undefined) updateData.discount      = discount      !== '' ? Number(discount)      : undefined;
-    if (description   !== undefined) updateData.description   = description;
-    if (highlights    !== undefined) updateData.highlights    = highlights;
-    if (specifications!== undefined) updateData.specifications= specifications;
-    if (sku           !== undefined) updateData.sku           = sku;
-    if (stock         !== undefined) updateData.stock         = Number(stock);
-    if (tags          !== undefined) updateData.tags          = tags;
-    if (warranty      !== undefined) updateData.warranty      = warranty;
-    if (returnPolicy  !== undefined) updateData.returnPolicy  = returnPolicy;
-    
+    if (name           !== undefined) updateData.name           = name;
+    if (brand          !== undefined) updateData.brand          = brand;
+    if (price          !== undefined) updateData.price          = Number(price);
+    if (image          !== undefined) updateData.image          = image;
+    if (images         !== undefined) updateData.images         = images;
+    if (originalPrice  !== undefined) updateData.originalPrice  = originalPrice !== '' ? Number(originalPrice) : undefined;
+    if (discount       !== undefined) updateData.discount       = discount      !== '' ? Number(discount)      : undefined;
+    if (description    !== undefined) updateData.description    = description;
+    if (highlights     !== undefined) updateData.highlights     = highlights;
+    if (specifications !== undefined) updateData.specifications = specifications;
+    if (sku            !== undefined) updateData.sku            = sku;
+    if (stock          !== undefined) updateData.stock          = Number(stock);
+    if (tags           !== undefined) updateData.tags           = tags;
+    if (warranty       !== undefined) updateData.warranty       = warranty;
+    if (returnPolicy   !== undefined) updateData.returnPolicy   = returnPolicy;
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     ).populate('categories', 'name subcategories');
-    
+
     if (!product) return res.status(404).json({ error: "Product not found" });
     res.json({ success: true, product });
   } catch (err) {
@@ -449,16 +505,16 @@ app.put("/api/products/:id", adminAuth, async (req, res) => {
 });
 
 // ADMIN DELETE PRODUCT
-app.delete("/api/products/:id", adminAuth, async(req,res)=>{
-  try{
+app.delete("/api/products/:id", adminAuth, async (req, res) => {
+  try {
     await Product.findByIdAndDelete(req.params.id);
-    res.json({success:true});
-  }catch(err){
-    res.status(500).json({error:err.message});
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// UPDATE PRODUCT CATEGORIES (Admin only)
+// UPDATE PRODUCT CATEGORIES
 app.put("/api/products/:id/categories", adminAuth, async (req, res) => {
   try {
     const { categories, selectedSubcategories } = req.body;
@@ -495,7 +551,6 @@ app.post("/api/featured-products", adminAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    // Build the document; only include optional pricing fields when provided
     const doc = { name, brand, price: Number(price), image };
     if (originalPrice !== undefined && originalPrice !== '') doc.originalPrice = Number(originalPrice);
     if (discount      !== undefined && discount      !== '') doc.discount      = Math.max(0, Math.min(100, Number(discount)));
@@ -512,19 +567,19 @@ app.put("/api/featured-products/:id", adminAuth, async (req, res) => {
   try {
     const { name, brand, price, image, originalPrice, discount } = req.body;
     const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (brand !== undefined) updateData.brand = brand;
-    if (price !== undefined) updateData.price = price;
-    if (image !== undefined) updateData.image = image;
+    if (name          !== undefined) updateData.name          = name;
+    if (brand         !== undefined) updateData.brand         = brand;
+    if (price         !== undefined) updateData.price         = price;
+    if (image         !== undefined) updateData.image         = image;
     if (originalPrice !== undefined) updateData.originalPrice = originalPrice;
-    if (discount !== undefined) updateData.discount = discount;
-    
+    if (discount      !== undefined) updateData.discount      = discount;
+
     const product = await FeaturedProduct.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     );
-    
+
     if (!product) return res.status(404).json({ error: "Featured product not found" });
     res.json({ success: true, product });
   } catch (err) {
@@ -546,7 +601,7 @@ app.delete("/api/featured-products/:id", adminAuth, async (req, res) => {
    CATEGORIES
 ========================= */
 
-// GET ALL CATEGORIES with their subcategories
+// GET ALL CATEGORIES
 app.get("/api/categories", async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
@@ -556,20 +611,20 @@ app.get("/api/categories", async (req, res) => {
   }
 });
 
-// CREATE NEW CATEGORY (Admin only)
+// CREATE NEW CATEGORY
 app.post("/api/categories", adminAuth, async (req, res) => {
   try {
     const { name, subcategories = [] } = req.body;
-    
+
     if (!name || name.trim() === '') {
       return res.status(400).json({ error: "Category name is required" });
     }
-    
+
     const category = await Category.create({
       name: name.trim(),
       subcategories: subcategories.filter(s => s && s.trim()).map(s => s.trim())
     });
-    
+
     res.json({ success: true, category });
   } catch (err) {
     if (err.code === 11000) {
@@ -579,67 +634,63 @@ app.post("/api/categories", adminAuth, async (req, res) => {
   }
 });
 
-// ADD SUBCATEGORY TO EXISTING CATEGORY (Admin only)
+// ADD SUBCATEGORY TO CATEGORY
 app.post("/api/categories/:id/subcategories", adminAuth, async (req, res) => {
   try {
     const { subcategory } = req.body;
-    
+
     if (!subcategory || subcategory.trim() === '') {
       return res.status(400).json({ error: "Subcategory name is required" });
     }
-    
+
     const category = await Category.findByIdAndUpdate(
       req.params.id,
       { $addToSet: { subcategories: subcategory.trim() } },
       { new: true }
     );
-    
+
     if (!category) {
       return res.status(404).json({ error: "Category not found" });
     }
-    
+
     res.json({ success: true, category });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// UPDATE CATEGORY NAME (Admin only)
+// UPDATE CATEGORY NAME
 app.put("/api/categories/:id", adminAuth, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) {
       return res.status(400).json({ error: "Category name is required" });
     }
-    
+
     const category = await Category.findByIdAndUpdate(
       req.params.id,
       { name },
       { new: true }
     );
-    
+
     if (!category) {
       return res.status(404).json({ error: "Category not found" });
     }
-    
+
     res.json({ success: true, category });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE CATEGORY (Admin only)
+// DELETE CATEGORY
 app.delete("/api/categories/:id", adminAuth, async (req, res) => {
   try {
     const catId = req.params.id;
-    
-    // First remove category reference from all products
     await Product.updateMany(
       { categories: catId },
       { $pull: { categories: catId } }
     );
-    
-    // Then delete the category
     await Category.findByIdAndDelete(catId);
     res.json({ success: true });
   } catch (err) {
@@ -648,42 +699,40 @@ app.delete("/api/categories/:id", adminAuth, async (req, res) => {
   }
 });
 
-// UPDATE SUBCATEGORY NAME (Admin only)
+// UPDATE SUBCATEGORY NAME
 app.put("/api/categories/:id/subcategories/:subcategory", adminAuth, async (req, res) => {
   try {
     const { subcategory: newSubName } = req.body;
     const oldSubName = decodeURIComponent(req.params.subcategory);
-    
+
     if (!newSubName) {
       return res.status(400).json({ error: "New subcategory name is required" });
     }
-    
+
     const category = await Category.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ error: "Category not found" });
     }
-    
-    // Find and replace the subcategory
+
     const idx = category.subcategories.indexOf(oldSubName);
     if (idx === -1) {
       return res.status(404).json({ error: "Subcategory not found" });
     }
-    
-    // Check for duplicate
+
     if (category.subcategories.includes(newSubName)) {
       return res.status(400).json({ error: "Subcategory already exists" });
     }
-    
+
     category.subcategories[idx] = newSubName;
     await category.save();
-    
+
     res.json({ success: true, category });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// REMOVE SUBCATEGORY FROM CATEGORY (Admin only)
+// REMOVE SUBCATEGORY FROM CATEGORY
 app.delete("/api/categories/:id/subcategories/:subcategory", adminAuth, async (req, res) => {
   try {
     const category = await Category.findByIdAndUpdate(
@@ -691,11 +740,11 @@ app.delete("/api/categories/:id/subcategories/:subcategory", adminAuth, async (r
       { $pull: { subcategories: req.params.subcategory } },
       { new: true }
     );
-    
+
     if (!category) {
       return res.status(404).json({ error: "Category not found" });
     }
-    
+
     res.json({ success: true, category });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -705,47 +754,44 @@ app.delete("/api/categories/:id/subcategories/:subcategory", adminAuth, async (r
 /* =========================
    COMPLAINTS
 ========================= */
-//View complaints
-app.get("/api/complaints", adminAuth, async(req,res)=>{
-  try{
-    const data = await Complaint.find().sort({createdAt:-1});
+
+// VIEW ALL COMPLAINTS
+app.get("/api/complaints", adminAuth, async (req, res) => {
+  try {
+    const data = await Complaint.find().sort({ createdAt: -1 });
     res.json(data);
-  }catch{
+  } catch {
     res.status(500).json([]);
   }
 });
 
-
 // ADD COMPLAINT
-app.post("/api/complaints", async(req,res)=>{
-  try{
-    const {email,message} = req.body;
+app.post("/api/complaints", async (req, res) => {
+  try {
+    const { email, message } = req.body;
 
-    if(!email || !message){
-      return res.status(400).json({success:false});
+    if (!email || !message) {
+      return res.status(400).json({ success: false });
     }
 
-    await Complaint.create({email,message});
-
-    res.json({success:true});
-  }catch{
-    res.status(500).json({success:false});
+    await Complaint.create({ email, message });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
   }
 });
-// Resolve complaint
+
+// RESOLVE COMPLAINT
 app.put("/api/complaints/:id/resolve", adminAuth, async (req, res) => {
   try {
-    await Complaint.findByIdAndUpdate(req.params.id, {
-      resolved: true
-    });
-
+    await Complaint.findByIdAndUpdate(req.params.id, { resolved: true });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false });
   }
 });
 
-// Delete complaint
+// DELETE COMPLAINT
 app.delete("/api/complaints/:id", adminAuth, async (req, res) => {
   try {
     await Complaint.findByIdAndDelete(req.params.id);
@@ -754,88 +800,57 @@ app.delete("/api/complaints/:id", adminAuth, async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+
 /* =========================
-   ORDERS (UPDATED)
+   ORDERS
 ========================= */
-const orderSchema = new mongoose.Schema({
-  user: mongoose.Schema.Types.Mixed,
-  items: mongoose.Schema.Types.Mixed,
-  subtotal: Number,
-  discount: Number,
-  gst: Number,
-  total: Number,
-  paymentMethod: String,
-  location: String,
-  contactNumber: String,
-  promoCode: String,
-  status: { type: String, default: "Placed" }
-}, { timestamps: true, strict: false }); // strict: false allows extra fields
 
-// Track promo code usage per user email
-const userPromoUsageSchema = new mongoose.Schema({
-  email: { type: String, required: true, index: true },
-  promoCode: { type: String, required: true },
-  orderId: { type: String, required: true },
-  usedAt: { type: Date, default: Date.now }
-}, { timestamps: true });
-
-const UserPromoUsage = mongoose.model("UserPromoUsage", userPromoUsageSchema);
-
-const Order = mongoose.model("Order", orderSchema);
-
+// PLACE ORDER
 app.post("/api/orders", async (req, res) => {
   console.log("📦 Order Received:", req.body);
   try {
     const { promoCode, user } = req.body;
-    
+
     // Validate promo code if provided
     if (promoCode) {
       const promo = await PromoCode.findOne({ code: promoCode.toUpperCase(), active: true });
-      
+
       if (!promo) {
         return res.status(400).json({ success: false, error: "Invalid or expired promo code" });
       }
-      
-      // Check global usage limit
+
       if (promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit) {
         return res.status(400).json({ success: false, error: "Promo code usage limit reached" });
       }
-      
-      // Check one-time per account
+
       if (promo.oneTimePerAccount && user?.email) {
-        const existingUsage = await UserPromoUsage.findOne({ 
-          email: user.email, 
-          promoCode: promoCode.toUpperCase() 
+        const existingUsage = await UserPromoUsage.findOne({
+          email: user.email,
+          promoCode: promoCode.toUpperCase()
         });
         if (existingUsage) {
           return res.status(400).json({ success: false, error: "You have already used this promo code" });
         }
       }
-      
-      // Check minimum order amount
+
       const subtotal = req.body.subtotal || 0;
       if (promo.minAmount > 0 && subtotal < promo.minAmount) {
-        return res.status(400).json({ 
-          success: false, 
-          error: `Minimum order amount ₹${promo.minAmount} required for this code` 
+        return res.status(400).json({
+          success: false,
+          error: `Minimum order amount ₹${promo.minAmount} required for this code`
         });
       }
     }
-    
+
     const order = await Order.create(req.body);
-    
-    // Note: discount is 0 by default (no automatic discount applied).
-    // Discount is only applied when a valid promo code is provided and validated above.
-    
+
     // Track promo code usage
     if (promoCode && order) {
       const promo = await PromoCode.findOne({ code: promoCode.toUpperCase() });
       if (promo) {
-        // Increment used count
         promo.usedCount += 1;
         await promo.save();
-        
-        // Track per-user usage
+
         if (user?.email) {
           await UserPromoUsage.create({
             email: user.email,
@@ -845,20 +860,20 @@ app.post("/api/orders", async (req, res) => {
         }
       }
     }
-    
+
     console.log("✅ Order Saved ID:", order._id);
     res.json({ success: true, orderId: order._id });
   } catch (err) {
     console.error("❌ MongoDB Save Error:", err);
-    res.status(500).json({ 
-      success: false, 
-      error: "Order failed", 
-      details: err.message 
+    res.status(500).json({
+      success: false,
+      error: "Order failed",
+      details: err.message
     });
   }
 });
 
-// GET ALL ORDERS (ADMIN ONLY)
+// GET ALL ORDERS (Admin)
 app.get("/api/orders", adminAuth, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -868,7 +883,7 @@ app.get("/api/orders", adminAuth, async (req, res) => {
   }
 });
 
-// UPDATE ORDER STATUS (ADMIN ONLY)
+// UPDATE ORDER STATUS (Admin)
 app.put("/api/orders/:id/status", adminAuth, async (req, res) => {
   try {
     const { status } = req.body;
@@ -879,7 +894,7 @@ app.put("/api/orders/:id/status", adminAuth, async (req, res) => {
   }
 });
 
-// DELETE ORDER (ADMIN ONLY)
+// DELETE ORDER (Admin)
 app.delete("/api/orders/:id", adminAuth, async (req, res) => {
   try {
     await Order.findByIdAndDelete(req.params.id);
@@ -889,7 +904,7 @@ app.delete("/api/orders/:id", adminAuth, async (req, res) => {
   }
 });
 
-// GET ORDER BY ID (PUBLIC - for users to check status)
+// GET ORDER BY ID (Public)
 app.get("/api/orders/:id", async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -900,7 +915,7 @@ app.get("/api/orders/:id", async (req, res) => {
   }
 });
 
-// GET ORDERS BY USER EMAIL (PUBLIC - for users to view their orders)
+// GET ORDERS BY USER EMAIL (Public)
 app.get("/api/orders/user/:email", async (req, res) => {
   try {
     const email = decodeURIComponent(req.params.email);
@@ -912,23 +927,10 @@ app.get("/api/orders/user/:email", async (req, res) => {
 });
 
 /* =========================
-   PROMO CODES / DISCOUNTS
+   PROMO CODES
 ========================= */
-const promoCodeSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true, uppercase: true },
-  discountType: { type: String, enum: ['percent', 'fixed'], default: 'percent' },
-  value: { type: Number, required: true, min: 1 },
-  minAmount: { type: Number, default: 0 },
-  usageLimit: { type: Number, default: 0 }, // 0 = unlimited
-  usedCount: { type: Number, default: 0 },
-  oneTimePerAccount: { type: Boolean, default: false },
-  desc: { type: String, default: '' },
-  active: { type: Boolean, default: true }
-}, { timestamps: true });
 
-const PromoCode = mongoose.model("PromoCode", promoCodeSchema);
-
-// GET ALL PROMO CODES (Public - for checkout page)
+// GET ACTIVE PROMO CODES (Public)
 app.get("/api/promo-codes", async (req, res) => {
   try {
     const codes = await PromoCode.find({ active: true }).sort({ createdAt: -1 });
@@ -938,7 +940,7 @@ app.get("/api/promo-codes", async (req, res) => {
   }
 });
 
-// GET ALL PROMO CODES (Admin - includes inactive)
+// GET ALL PROMO CODES (Admin)
 app.get("/api/admin/promo-codes", adminAuth, async (req, res) => {
   try {
     const codes = await PromoCode.find().sort({ createdAt: -1 });
@@ -948,7 +950,7 @@ app.get("/api/admin/promo-codes", adminAuth, async (req, res) => {
   }
 });
 
-// CREATE PROMO CODE (Admin only)
+// CREATE PROMO CODE (Admin)
 app.post("/api/promo-codes", adminAuth, async (req, res) => {
   try {
     const { code, discountType, value, minAmount, desc, usageLimit, oneTimePerAccount } = req.body;
@@ -960,10 +962,10 @@ app.post("/api/promo-codes", adminAuth, async (req, res) => {
       code: code.toUpperCase(),
       discountType: discountType || 'percent',
       value,
-      minAmount: minAmount || 0,
-      desc: desc || '',
-      usageLimit: usageLimit !== undefined ? usageLimit : 0,
-      oneTimePerAccount: oneTimePerAccount || false
+      minAmount:          minAmount          || 0,
+      desc:               desc               || '',
+      usageLimit:         usageLimit         !== undefined ? usageLimit : 0,
+      oneTimePerAccount:  oneTimePerAccount  || false
     });
 
     res.json({ success: true, promoCode });
@@ -976,18 +978,18 @@ app.post("/api/promo-codes", adminAuth, async (req, res) => {
   }
 });
 
-// UPDATE PROMO CODE (Admin only)
+// UPDATE PROMO CODE (Admin)
 app.put("/api/promo-codes/:id", adminAuth, async (req, res) => {
   try {
     const { discountType, value, minAmount, desc, active, usageLimit, oneTimePerAccount } = req.body;
     const updateData = {};
-    if (discountType !== undefined) updateData.discountType = discountType;
-    if (value !== undefined) updateData.value = value;
-    if (minAmount !== undefined) updateData.minAmount = minAmount;
-    if (desc !== undefined) updateData.desc = desc;
-    if (active !== undefined) updateData.active = active;
-    if (usageLimit !== undefined) updateData.usageLimit = usageLimit;
-    if (oneTimePerAccount !== undefined) updateData.oneTimePerAccount = oneTimePerAccount;
+    if (discountType       !== undefined) updateData.discountType      = discountType;
+    if (value              !== undefined) updateData.value             = value;
+    if (minAmount          !== undefined) updateData.minAmount         = minAmount;
+    if (desc               !== undefined) updateData.desc              = desc;
+    if (active             !== undefined) updateData.active            = active;
+    if (usageLimit         !== undefined) updateData.usageLimit        = usageLimit;
+    if (oneTimePerAccount  !== undefined) updateData.oneTimePerAccount = oneTimePerAccount;
 
     const promoCode = await PromoCode.findByIdAndUpdate(
       req.params.id,
@@ -1002,7 +1004,7 @@ app.put("/api/promo-codes/:id", adminAuth, async (req, res) => {
   }
 });
 
-// DELETE PROMO CODE (Admin only)
+// DELETE PROMO CODE (Admin)
 app.delete("/api/promo-codes/:id", adminAuth, async (req, res) => {
   try {
     await PromoCode.findByIdAndDelete(req.params.id);
@@ -1024,7 +1026,7 @@ app.get("/api/drive-config", (req, res) => {
   });
 });
 
-// Download file from Google Drive and save locally
+// Download file from Google Drive and save to /tmp
 app.post("/api/drive-upload", async (req, res) => {
   try {
     const { fileId, fileName } = req.body;
@@ -1038,25 +1040,18 @@ app.post("/api/drive-upload", async (req, res) => {
       return res.status(400).json({ success: false, message: "Google Drive not configured" });
     }
 
-    // Download file from Google Drive
     const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${driveToken}`;
-    
+
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(fileName) || '.jpg';
     const localFileName = uniqueSuffix + ext;
-    const filePath = path.join('uploads', localFileName);
+    const filePath = path.join('/tmp', localFileName);
 
-    // Ensure uploads directory exists
-    if (!fs.existsSync('uploads')) {
-      fs.mkdirSync('uploads', { recursive: true });
-    }
-
-    // Download and save the file
     const file = fs.createWriteStream(filePath);
-    
+
     https.get(driveUrl, (response) => {
       if (response.statusCode !== 200) {
-        fs.unlink(filePath, () => {}); // Delete empty file
+        fs.unlink(filePath, () => {});
         return res.status(400).json({ success: false, message: "Failed to download from Google Drive" });
       }
 
@@ -1068,13 +1063,13 @@ app.post("/api/drive-upload", async (req, res) => {
         res.json({ success: true, imageUrl });
       });
 
-      file.on('error', (err) => {
+      file.on('error', () => {
         file.close();
-        fs.unlink(filePath, () => {}); // Delete file on error
+        fs.unlink(filePath, () => {});
         res.status(500).json({ success: false, message: "File download error" });
       });
-    }).on('error', (err) => {
-      fs.unlink(filePath, () => {}); // Delete file on error
+    }).on('error', () => {
+      fs.unlink(filePath, () => {});
       res.status(500).json({ success: false, message: "Network error" });
     });
 
@@ -1095,8 +1090,13 @@ app.use((err, req, res, next) => {
    SERVER START
 ========================= */
 
-const PORT = process.env.PORT || 5000;
+// Local development: start the server normally
+// Vercel: export the app as a serverless function
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+module.exports = app;
