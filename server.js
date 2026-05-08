@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcrypt");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
@@ -38,6 +38,7 @@ app.use((req, res, next) => {
 });
 
 /* Serve frontend */
+app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
 
 /* =========================
@@ -57,7 +58,7 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5M
 /* =========================
    DATABASE
 ========================= */
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGO_URI)
 .then(async () => {
   console.log("MongoDB Connected");
   
@@ -1093,4 +1094,9 @@ app.use((err, req, res, next) => {
 /* =========================
    SERVER START
 ========================= */
-module.exports = app;
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
