@@ -23,6 +23,7 @@ app.use(express.static(__dirname, {
     res.setHeader("Expires", "0");
   }
 }));
+app.use('/uploads', express.static('/tmp'));
 
 /* =========================
    MIDDLEWARE
@@ -35,9 +36,6 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
-
-app.use(express.static(__dirname));
-app.use('/uploads', express.static('uploads'));
 
 /* =========================
    FILE UPLOAD
@@ -91,14 +89,27 @@ async function connectDB() {
   }
 }
 
-// Connect before every request (no-op if already connected)
-app.use(async (req, res, next) => {
+// Connect only for API routes — static files and HTML pages work even without DB
+app.use('/api', async (req, res, next) => {
   try {
     await connectDB();
     next();
   } catch (err) {
-    console.error("DB connection error:", err);
-    res.status(500).json({ success: false, message: "Database connection failed" });
+    console.error("DB connection error:", err.message);
+
+    // Give a helpful error message so you can diagnose on Vercel
+    let message = "Database connection failed";
+    if (!process.env.MONGODB_URI) {
+      message = "MONGODB_URI is not set — add it in Vercel Project Settings → Environment Variables";
+    } else if (err.message && err.message.includes('ECONNREFUSED')) {
+      message = "MongoDB connection refused — check your Atlas Network Access (allow 0.0.0.0/0)";
+    } else if (err.message && (err.message.includes('timed out') || err.message.includes('timeout'))) {
+      message = "MongoDB connection timed out — check Atlas Network Access allows Vercel IPs (0.0.0.0/0)";
+    } else if (err.message && err.message.includes('authentication')) {
+      message = "MongoDB authentication failed — check your MONGODB_URI username/password";
+    }
+
+    res.status(500).json({ success: false, message });
   }
 });
 
