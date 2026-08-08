@@ -1,3 +1,4 @@
+require('dotenv').config();
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const mongoose = require("mongoose");
@@ -55,18 +56,28 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5 
 /* =========================
    DATABASE — connection caching for serverless
 ========================= */
-let isConnected = false;
-
 async function connectDB() {
-  if (isConnected) return;
+  // readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+  if (mongoose.connection.readyState === 1) return; // already connected
+  if (mongoose.connection.readyState === 2) {
+    // Wait for pending connection
+    await new Promise((resolve, reject) => {
+      mongoose.connection.once('connected', resolve);
+      mongoose.connection.once('error', reject);
+    });
+    return;
+  }
+
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI environment variable is not set. Please add it in your Vercel project settings.");
+  }
 
   await mongoose.connect(process.env.MONGODB_URI, {
     serverSelectionTimeoutMS: 10000,
     bufferCommands: false,
   });
 
-  isConnected = true;
-  console.log("MongoDB Connected");
+  console.log("✅ MongoDB Connected");
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
